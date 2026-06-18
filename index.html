@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudyAI – Lerne smarter</title>
+  <meta name="description" content="KI-gestützte Lernapp – Karteikarten, Quiz und Zusammenfassungen aus deinen Dokumenten." />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0f0f13" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────────────────────────── -->
+<header class="header">
+  <div class="header-inner">
+    <button class="logo" id="logo-home" aria-label="Zur Startseite">
+      <span class="logo-mark">S</span>
+      <span class="logo-text">StudyAI</span>
+    </button>
+    <nav class="header-nav">
+      <button class="nav-btn" id="nav-library" title="Bibliothek">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>Bibliothek</span>
+      </button>
+      <button class="nav-btn" id="nav-plan" title="Lernplan">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Lernplan</span>
+      </button>
+      <button class="nav-btn timer-nav-btn" id="nav-timer" title="Pomodoro Timer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<!-- ── Timer Panel ─────────────────────────────────────────────────────── -->
+<div class="timer-panel" id="timer-panel" style="display:none">
+  <div class="timer-header">
+    <span class="timer-mode-label" id="timer-mode-label">🍅 Lernen</span>
+    <button class="timer-close" id="timer-close">✕</button>
+  </div>
+  <div class="timer-display" id="timer-display">25:00</div>
+  <div class="timer-modes">
+    <button class="timer-mode-btn active" data-minutes="25">25 min</button>
+    <button class="timer-mode-btn" data-minutes="5">5 min</button>
+    <button class="timer-mode-btn" data-minutes="10">10 min</button>
+  </div>
+  <div class="timer-controls">
+    <button class="btn-timer-action" id="timer-reset">↺</button>
+    <button class="btn-timer-toggle" id="timer-toggle">▶ Start</button>
+  </div>
+</div>
+
+<!-- ── Toast ───────────────────────────────────────────────────────────── -->
+<div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- SCREENS                                                               -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+
+<!-- UPLOAD ──────────────────────────────────────────────────────────────── -->
+<main class="screen active" id="screen-upload">
+  <div class="upload-hero">
+    <div class="hero-label">KI-gestütztes Lernen</div>
+    <h1 class="hero-title">Lade ein Dokument<br/>und lerne smarter.</h1>
+    <p class="hero-sub">PDF, Word, Text oder Bild – StudyAI erstellt Karteikarten, Quizzes und Zusammenfassungen in Sekunden.</p>
+  </div>
+
+  <div class="upload-card">
+    <div class="upload-zone" id="upload-zone" role="button" tabindex="0" aria-label="Datei hochladen">
+      <div class="upload-zone-inner">
+        <div class="upload-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <p class="upload-title">Datei hierher ziehen</p>
+        <p class="upload-sub">oder klicken zum Auswählen</p>
+        <p class="upload-types">PDF · Word · TXT · JPG · PNG</p>
+      </div>
+    </div>
+    <input type="file" id="file-input" accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.gif,.webp" hidden />
+
+    <div class="file-preview" id="file-preview" style="display:none"></div>
+
+    <div class="mode-section">
+      <p class="mode-label">Was soll erstellt werden?</p>
+      <div class="mode-grid">
+        <button class="mode-card selected" data-mode="flashcards">
+          <span class="mode-icon">🗂️</span>
+          <span class="mode-name">Karteikarten</span>
+          <span class="mode-desc">Interaktive Lernkarten zum Wiederholen</span>
+        </button>
+        <button class="mode-card" data-mode="summary">
+          <span class="mode-icon">📝</span>
+          <span class="mode-name">Zusammenfassung</span>
+          <span class="mode-desc">Strukturierte Lernzusammenfassung</span>
+        </button>
+        <button class="mode-card" data-mode="quiz">
+          <span class="mode-icon">🎯</span>
+          <span class="mode-name">Quiz</span>
+          <span class="mode-desc">Multiple Choice, Wahr/Falsch & Freitext</span>
+        </button>
+      </div>
+
+      <div class="difficulty-row">
+        <span class="difficulty-label">Anzahl Karten / Fragen:</span>
+        <div class="difficulty-pills">
+          <button class="diff-pill" data-count="5">Wenige (5)</button>
+          <button class="diff-pill active" data-count="10">Normal (10)</button>
+          <button class="diff-pill" data-count="15">Viele (15)</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-analyze" id="analyze-btn" disabled>
+      <span>Analysieren</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+  </div>
+</main>
+
+<!-- LOADING ──────────────────────────────────────────────────────────────── -->
+<main class="screen" id="screen-loading">
+  <div class="loading-container">
+    <div class="loading-orb">
+      <div class="orb-ring"></div>
+      <div class="orb-ring delay-1"></div>
+      <div class="orb-ring delay-2"></div>
+      <span class="orb-letter">S</span>
+    </div>
+    <p class="loading-title">Analysiere dein Dokument…</p>
+    <p class="loading-sub" id="loading-sub">Die KI liest und verarbeitet deinen Inhalt</p>
+  </div>
+</main>
+
+<!-- FLASHCARDS ──────────────────────────────────────────────────────────── -->
+<main class="screen" id="screen-flashcards">
+  <div class="screen-header">
+    <button class="btn-back" aria-label="Zurück">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Zurück
+    </button>
+    <div class="screen-actions">
+      <button class="btn-save btn-icon-label" data-mode="flashcards">💾 Speichern</button>
+    </div>
+  </div>
+  <div id="fc-container"></div>
+</main>
+
+<!-- SUMMARY ──────────────────────────────────────────────────────────────── -->
+<main class="screen" id="screen-summary">
+  <div class="screen-header">
+    <button class="btn-back" aria-label="Zurück">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Zurück
+    </button>
+    <div class="screen-actions">
+      <button class="btn-save btn-icon-label" data-mode="summary">💾 Speichern</button>
+      <button class="btn-icon-label" id="summary-export">🖨️ Drucken</button>
+    </div>
+  </div>
+  <div class="summary-wrapper">
+    <div class="summary-content" id="summary-content"></div>
+  </div>
+</main>
+
+<!-- QUIZ ──────────────────────────────────────────────────────────────────── -->
+<main class="screen" id="screen-quiz">
+  <div class="screen-header">
+    <button class="btn-back" aria-label="Zurück">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Zurück
+    </button>
+    <div class="screen-actions">
+      <button class="btn-save btn-icon-label" data-mode="quiz">💾 Speichern</button>
+    </div>
+  </div>
+  <div class="quiz-wrapper" id="quiz-body"></div>
+</main>
+
+<!-- LIBRARY ──────────────────────────────────────────────────────────────── -->
+<main class="screen" id="screen-library">
+  <div class="screen-header">
+    <button class="btn-back" aria-label="Zurück">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Zurück
+    </button>
+    <h2 class="screen-title">Bibliothek</h2>
+    <button class="btn-icon-label" id="lib-new">+ Neu</button>
+  </div>
+  <div class="filter-bar" id="library-filter-bar"></div>
+  <div class="library-grid" id="library-grid"></div>
+</main>
+
+<!-- PLAN ─────────────────────────────────────────────────────────────────── -->
+<main class="screen" id="screen-plan">
+  <div class="screen-header">
+    <button class="btn-back" aria-label="Zurück">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Zurück
+    </button>
+    <h2 class="screen-title">Lernplan</h2>
+    <button class="btn-icon-label" id="plan-add-btn">+ Ziel</button>
+  </div>
+  <div class="plan-body" id="plan-body"></div>
+</main>
+
+<!-- ── Save Modal ─────────────────────────────────────────────────────── -->
+<div class="modal-backdrop" id="save-backdrop">
+  <div class="modal">
+    <h3>💾 Lernset speichern</h3>
+    <p>Das Lernset wird lokal in deinem Browser gespeichert.</p>
+    <div class="modal-field">
+      <label for="save-title">Titel</label>
+      <input type="text" id="save-title" placeholder="z. B. Biologie Kapitel 3" />
+    </div>
+    <div class="modal-field">
+      <label for="save-subject">Fach</label>
+      <input type="text" id="save-subject" placeholder="z. B. Biologie" list="subject-list" />
+      <datalist id="subject-list"></datalist>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" id="save-cancel">Abbrechen</button>
+      <button class="btn-modal-confirm" id="save-confirm">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Plan Modal ─────────────────────────────────────────────────────── -->
+<div class="modal-backdrop" id="plan-backdrop">
+  <div class="modal">
+    <h3>📅 Lernziel hinzufügen</h3>
+    <div class="modal-field">
+      <label for="plan-title">Ziel</label>
+      <input type="text" id="plan-title" placeholder="z. B. Vokabeln Kapitel 5 lernen" />
+    </div>
+    <div class="modal-field">
+      <label for="plan-date">Fällig bis</label>
+      <input type="date" id="plan-date" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" id="plan-cancel">Abbrechen</button>
+      <button class="btn-modal-confirm" id="plan-confirm">Hinzufügen</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+</script>
+</body>
+</html>
