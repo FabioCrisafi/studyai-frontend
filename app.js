@@ -367,7 +367,7 @@ function renderFlashcard() {
   state.fcFlipped = false;
 
   container.innerHTML = `
-    <div class="flashcard-progress">
+    <div class="fc-progress-row">
       <span>${done + 1} / ${total}</span>
       <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
       <span>${state.fcCorrect} ✓</span>
@@ -385,12 +385,12 @@ function renderFlashcard() {
         </div>
       </div>
     </div>
-    <div class="flashcard-actions" id="fc-actions" style="display:none">
+    <div class="flashcard-actions" id="fc-actions" class="fc-actions" style="display:none">
       <button class="btn-wrong" onclick="fcAnswer(false)">✗ Nochmal</button>
       <button class="btn-secondary" onclick="fcFlip()">↩ Zurückdrehen</button>
       <button class="btn-correct" onclick="fcAnswer(true)">✓ Gewusst</button>
     </div>
-    <div id="fc-flip-hint" style="text-align:center;margin-top:1rem">
+    <div id="fc-flip-hint" class="fc-flip-hint">
       <button class="btn-primary" onclick="fcFlip()">Karte umdrehen</button>
     </div>
   `;
@@ -467,7 +467,7 @@ function renderQuestion() {
   if (type === 'text') {
     body.innerHTML = `
       <div class="quiz-question-card">
-        <div class="quiz-q-number">Frage ${state.quizIndex + 1} von ${state.quiz.length}
+        <div class="quiz-q-meta"><div class="quiz-q-num">Frage ${state.quizIndex + 1} von ${state.quiz.length}
           <span class="quiz-type-badge">✍️ Freitext</span></div>
         <div class="quiz-q-text">${escHtml(q.question)}</div>
         <textarea class="quiz-text-input" id="quiz-text-input"
@@ -481,7 +481,7 @@ function renderQuestion() {
     const letters = ['A','B','C','D'];
     body.innerHTML = `
       <div class="quiz-question-card">
-        <div class="quiz-q-number">Frage ${state.quizIndex + 1} von ${state.quiz.length}
+        <div class="quiz-q-meta"><div class="quiz-q-num">Frage ${state.quizIndex + 1} von ${state.quiz.length}
           ${type === 'tf' ? '<span class="quiz-type-badge">✅ Wahr/Falsch</span>' : ''}</div>
         <div class="quiz-q-text">${escHtml(q.question)}</div>
         <div class="quiz-options ${type === 'tf' ? 'quiz-options-tf' : ''}">
