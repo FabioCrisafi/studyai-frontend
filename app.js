@@ -1,6 +1,6 @@
 // ── Backend URL ──────────────────────────────────────────────────────────────
 // Ersetze diese URL mit deiner Render.com URL nach dem Deployment!
-const BACKEND_URL = 'https://studyai-backend.onrender.com';
+const BACKEND_URL = 'https://studyai-backend-gray.vercel.app';
 
 // ── State ──────────────────────────────────────────────────────────────────
 const state = {
