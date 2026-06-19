@@ -1,677 +1,355 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>StudyAI – Lerne smarter</title>
-  <meta name="description" content="KI-gestützte Lernapp" />
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#080810" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="StudyAI" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    /* ── v4 Additions ── */
-    .screen { display:none; }
-    .screen.active { display:block; }
-
-    /* HOME */
-    .home-wrap { max-width:900px; margin:0 auto; padding:2rem 1.5rem 4rem; }
-    .home-hero { text-align:center; padding:3rem 0 2rem; }
-    .home-hero h1 { font-size:clamp(2rem,5vw,3.2rem); font-family:'Instrument Serif',serif; margin-bottom:0.5rem; }
-    .home-hero p { color:var(--text2); font-size:1.05rem; margin-bottom:2rem; }
-    .home-hero-stats { display:flex; gap:2rem; justify-content:center; flex-wrap:wrap; margin-bottom:2.5rem; }
-    .home-stat { text-align:center; }
-    .home-stat-num { font-size:2rem; font-weight:700; background:var(--grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-    .home-stat-label { font-size:0.75rem; color:var(--text2); text-transform:uppercase; letter-spacing:.08em; }
-
-    .home-actions { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; margin-bottom:3rem; }
-    .btn-home-primary { background:var(--grad); color:#fff; border:none; border-radius:14px; padding:.85rem 2rem; font-size:1rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:.5rem; transition:opacity .2s,transform .2s; }
-    .btn-home-primary:hover { opacity:.9; transform:translateY(-1px); }
-    .btn-home-secondary { background:var(--glass); border:1px solid var(--border); color:var(--text1); border-radius:14px; padding:.85rem 1.5rem; font-size:.95rem; font-weight:500; cursor:pointer; display:flex; align-items:center; gap:.5rem; transition:background .2s,transform .2s; }
-    .btn-home-secondary:hover { background:var(--glass2); transform:translateY(-1px); }
-
-    .home-section-title { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--text2); margin:0 0 1rem; }
-    .projects-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1rem; margin-bottom:2.5rem; }
-    .project-card { background:var(--glass); border:1px solid var(--border); border-radius:18px; padding:1.4rem 1.4rem 1.2rem; cursor:pointer; transition:transform .2s,border-color .2s,box-shadow .2s; position:relative; overflow:hidden; }
-    .project-card::before { content:''; position:absolute; inset:0; background:var(--grad); opacity:0; transition:opacity .2s; }
-    .project-card:hover { transform:translateY(-3px); border-color:var(--purple); box-shadow:0 8px 30px rgba(167,139,250,.15); }
-    .project-card-icon { font-size:2rem; margin-bottom:.75rem; }
-    .project-card-name { font-weight:600; font-size:1.05rem; margin-bottom:.25rem; }
-    .project-card-meta { font-size:.8rem; color:var(--text2); display:flex; gap:.75rem; align-items:center; }
-    .project-card-color { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-    .project-card-actions { position:absolute; top:.75rem; right:.75rem; display:flex; gap:.4rem; opacity:0; transition:opacity .2s; }
-    .project-card:hover .project-card-actions { opacity:1; }
-    .project-action-btn { background:rgba(0,0,0,.4); border:none; border-radius:8px; padding:.3rem .5rem; cursor:pointer; font-size:.8rem; color:var(--text2); transition:color .2s; }
-    .project-action-btn:hover { color:var(--text1); }
-    .project-card-add { border:2px dashed var(--border); background:transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.5rem; min-height:120px; color:var(--text2); transition:border-color .2s,color .2s; }
-    .project-card-add:hover { border-color:var(--purple); color:var(--purple); }
-    .project-card-add svg { opacity:.5; }
-    .project-card-add span { font-size:.9rem; font-weight:500; }
-
-    /* PROJECT MODAL */
-    .modal-project { max-width:420px; }
-    .color-picker { display:flex; gap:.6rem; flex-wrap:wrap; margin-top:.5rem; }
-    .color-dot { width:28px; height:28px; border-radius:50%; cursor:pointer; border:3px solid transparent; transition:transform .15s,border-color .15s; }
-    .color-dot.selected { border-color:#fff; transform:scale(1.15); }
-    .icon-picker { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.5rem; }
-    .icon-btn { background:var(--glass2); border:1px solid var(--border); border-radius:10px; padding:.4rem .6rem; font-size:1.2rem; cursor:pointer; transition:background .2s,border-color .2s; }
-    .icon-btn.selected { background:rgba(167,139,250,.2); border-color:var(--purple); }
-
-    /* PROJECT INSIDE */
-    .project-inside-wrap { max-width:900px; margin:0 auto; padding:1.5rem; }
-    .project-inside-header { display:flex; align-items:center; gap:1rem; margin-bottom:2rem; padding-bottom:1.5rem; border-bottom:1px solid var(--border); }
-    .project-inside-icon { font-size:2.5rem; }
-    .project-inside-name { font-size:1.5rem; font-weight:700; }
-    .project-inside-sub { font-size:.85rem; color:var(--text2); }
-    .project-nav { display:flex; gap:.6rem; flex-wrap:wrap; margin-bottom:2rem; }
-    .project-nav-btn { background:var(--glass); border:1px solid var(--border); border-radius:12px; padding:.6rem 1.1rem; font-size:.88rem; font-weight:500; cursor:pointer; color:var(--text2); transition:all .2s; display:flex; align-items:center; gap:.4rem; }
-    .project-nav-btn:hover, .project-nav-btn.active { background:rgba(167,139,250,.15); border-color:var(--purple); color:var(--purple); }
-    .project-section { display:none; }
-    .project-section.active { display:block; }
-
-    /* LERNSETS INSIDE PROJECT */
-    .lernset-actions { display:flex; gap:.75rem; margin-bottom:1.5rem; flex-wrap:wrap; }
-    .btn-new-lernset { background:var(--grad); color:#fff; border:none; border-radius:12px; padding:.65rem 1.2rem; font-size:.9rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:.4rem; }
-    .btn-new-lernset:hover { opacity:.9; }
-
-    /* PROBEPRÜFUNG */
-    .probe-config { background:var(--glass); border:1px solid var(--border); border-radius:16px; padding:1.5rem; margin-bottom:1.5rem; }
-    .probe-config h3 { margin-bottom:1rem; font-size:1rem; }
-    .probe-options { display:flex; gap:.75rem; flex-wrap:wrap; margin-bottom:1rem; }
-    .probe-option { background:var(--glass2); border:1px solid var(--border); border-radius:10px; padding:.5rem 1rem; cursor:pointer; font-size:.88rem; color:var(--text2); transition:all .2s; }
-    .probe-option.active { background:rgba(167,139,250,.15); border-color:var(--purple); color:var(--purple); font-weight:600; }
-    .btn-start-probe { background:var(--grad); color:#fff; border:none; border-radius:12px; padding:.75rem 1.5rem; font-size:.95rem; font-weight:600; cursor:pointer; width:100%; margin-top:.5rem; }
-    .btn-start-probe:hover { opacity:.9; }
-    .probe-empty { text-align:center; padding:3rem; color:var(--text2); }
-    .probe-empty-icon { font-size:3rem; margin-bottom:1rem; }
-
-    /* GLOBAL CALENDAR */
-    .calendar-wrap { max-width:900px; margin:0 auto; padding:1.5rem; }
-    .calendar-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; }
-    .calendar-title { font-size:1.3rem; font-weight:700; }
-    .calendar-nav-btns { display:flex; gap:.5rem; }
-    .cal-nav-btn { background:var(--glass); border:1px solid var(--border); border-radius:10px; padding:.4rem .8rem; cursor:pointer; color:var(--text1); font-size:.9rem; transition:background .2s; }
-    .cal-nav-btn:hover { background:var(--glass2); }
-    .calendar-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
-    .cal-day-header { text-align:center; font-size:.7rem; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.06em; padding:.5rem 0; }
-    .cal-day { min-height:80px; background:var(--glass); border:1px solid var(--border); border-radius:10px; padding:.4rem; position:relative; transition:background .2s; }
-    .cal-day:hover { background:var(--glass2); }
-    .cal-day.today { border-color:var(--purple); }
-    .cal-day.other-month { opacity:.35; }
-    .cal-day-num { font-size:.78rem; font-weight:600; margin-bottom:.3rem; }
-    .cal-day.today .cal-day-num { color:var(--purple); }
-    .cal-event { font-size:.65rem; padding:.15rem .35rem; border-radius:5px; margin-bottom:.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
-    .cal-event.type-plan { background:rgba(167,139,250,.25); color:var(--purple); }
-    .cal-event.type-deadline { background:rgba(251,191,36,.2); color:var(--amber); }
-    .cal-event.type-ai { background:rgba(52,211,153,.2); color:var(--green); }
-    .cal-legend { display:flex; gap:1rem; flex-wrap:wrap; margin-top:1rem; }
-    .cal-legend-item { display:flex; align-items:center; gap:.4rem; font-size:.78rem; color:var(--text2); }
-    .cal-legend-dot { width:8px; height:8px; border-radius:50%; }
-
-    /* KI LERNPLAN */
-    .ki-plan-config { background:var(--glass); border:1px solid var(--border); border-radius:16px; padding:1.5rem; margin-bottom:1.5rem; }
-    .ki-plan-config h3 { font-size:1rem; margin-bottom:1rem; }
-    .ki-plan-field { margin-bottom:1rem; }
-    .ki-plan-field label { display:block; font-size:.82rem; color:var(--text2); margin-bottom:.35rem; }
-    .ki-plan-field input, .ki-plan-field textarea, .ki-plan-field select { width:100%; background:var(--glass2); border:1px solid var(--border); border-radius:10px; padding:.6rem .9rem; color:var(--text1); font-size:.9rem; font-family:inherit; resize:vertical; }
-    .ki-plan-field input:focus, .ki-plan-field textarea:focus { outline:none; border-color:var(--purple); }
-    .btn-ki-generate { background:var(--grad); color:#fff; border:none; border-radius:12px; padding:.75rem 1.5rem; font-size:.95rem; font-weight:600; cursor:pointer; width:100%; display:flex; align-items:center; justify-content:center; gap:.5rem; }
-    .btn-ki-generate:hover { opacity:.9; }
-    .ki-plan-result { background:var(--glass); border:1px solid var(--border); border-radius:16px; padding:1.5rem; }
-    .ki-plan-result h3 { font-size:1rem; margin-bottom:1rem; }
-
-    /* PWA INSTALL BANNER */
-    .pwa-banner { position:fixed; bottom:1rem; left:50%; transform:translateX(-50%); background:var(--glass); border:1px solid var(--purple); border-radius:16px; padding:.8rem 1.2rem; display:flex; align-items:center; gap:.75rem; backdrop-filter:blur(20px); z-index:200; box-shadow:0 8px 30px rgba(0,0,0,.3); max-width:360px; width:calc(100% - 2rem); }
-    .pwa-banner-text { flex:1; font-size:.85rem; }
-    .pwa-banner-text strong { display:block; font-size:.9rem; margin-bottom:.1rem; }
-    .pwa-banner-text span { color:var(--text2); font-size:.8rem; }
-    .btn-pwa-install { background:var(--grad); color:#fff; border:none; border-radius:10px; padding:.45rem .9rem; font-size:.82rem; font-weight:600; cursor:pointer; white-space:nowrap; }
-    .btn-pwa-dismiss { background:none; border:none; color:var(--text2); cursor:pointer; font-size:1.2rem; padding:.2rem; }
-
-    /* DEADLINE MODAL */
-    .modal-deadline { max-width:380px; }
-
-    /* NAV v4 */
-    .nav-btn-home { background:none; border:none; color:var(--text2); cursor:pointer; display:flex; align-items:center; gap:.4rem; font-size:.85rem; padding:.4rem .7rem; border-radius:10px; transition:background .2s,color .2s; }
-    .nav-btn-home:hover { background:var(--glass); color:var(--text1); }
-    .nav-btn-home svg { opacity:.7; }
-
-    @media(max-width:600px) {
-      .calendar-grid { gap:2px; }
-      .cal-day { min-height:55px; padding:.25rem; }
-      .cal-day-num { font-size:.7rem; }
-      .cal-event { font-size:.58rem; }
-      .projects-grid { grid-template-columns:1fr; }
-    }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>StudyAI</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#0f0f13"/>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-
 <div class="bg-grid"></div>
-<div class="bg-orb bg-orb-1"></div>
-<div class="bg-orb bg-orb-2"></div>
-<div class="bg-orb bg-orb-3"></div>
-<canvas id="konfetti-canvas"></canvas>
+<div class="bg-orb orb1"></div>
+<div class="bg-orb orb2"></div>
 
-<!-- ── Header ──────────────────────────────────────────────────────────── -->
-<header class="header">
-  <div class="header-inner">
-    <button class="logo" id="logo-home">
-      <div class="logo-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-      </div>
-      <span class="logo-text">StudyAI</span>
-      <span class="logo-badge">v4</span>
-    </button>
+<!-- ── AUTH SCREEN ─────────────────────────────────────────────────────────── -->
+<div id="auth-screen" class="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <span class="auth-logo-icon">⚡</span>
+      <span class="auth-logo-text">StudyAI</span>
+    </div>
+    <p class="auth-subtitle">Dein KI-gestützter Lernassistent</p>
 
-    <div class="header-streak" id="header-streak" title="Lernstreak">
-      <span class="streak-fire">🔥</span>
-      <span class="streak-num" id="streak-num">0</span>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Anmelden</button>
+      <button class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Registrieren</button>
     </div>
 
+    <div id="auth-login-form">
+      <div class="auth-field">
+        <label>E-Mail</label>
+        <input type="email" id="login-email" placeholder="deine@email.ch" autocomplete="email"/>
+      </div>
+      <div class="auth-field">
+        <label>Passwort</label>
+        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"/>
+      </div>
+      <button class="auth-btn" onclick="doLogin()">
+        <span id="login-btn-text">Anmelden</span>
+      </button>
+    </div>
+
+    <div id="auth-signup-form" style="display:none">
+      <div class="auth-field">
+        <label>Name</label>
+        <input type="text" id="signup-name" placeholder="Max Muster"/>
+      </div>
+      <div class="auth-field">
+        <label>E-Mail</label>
+        <input type="email" id="signup-email" placeholder="deine@email.ch" autocomplete="email"/>
+      </div>
+      <div class="auth-field">
+        <label>Passwort</label>
+        <input type="password" id="signup-password" placeholder="Mind. 6 Zeichen" autocomplete="new-password"/>
+      </div>
+      <button class="auth-btn" onclick="doSignup()">
+        <span id="signup-btn-text">Konto erstellen</span>
+      </button>
+    </div>
+
+    <div id="auth-error" class="auth-error" style="display:none"></div>
+    <div id="auth-success" class="auth-success" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ────────────────────────────────────────────────────────────── -->
+<div id="app" style="display:none">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <span class="logo-icon">⚡</span>
+      <span class="logo-text">StudyAI</span>
+    </div>
     <nav class="header-nav">
-      <button class="nav-btn nav-btn-home" id="nav-calendar">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span>Kalender</span>
+      <button class="nav-btn" id="nav-dashboard" onclick="showScreen('dashboard')" title="Dashboard">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Dashboard</span>
       </button>
-      <button class="nav-icon-btn" id="nav-timer" title="Pomodoro">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <button class="nav-btn" id="nav-upload" onclick="showScreen('upload')" title="Hochladen">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span>Hochladen</span>
       </button>
-      <button class="nav-icon-btn" id="nav-theme" title="Theme wechseln">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <button class="nav-btn" id="nav-library" onclick="showScreen('library')" title="Bibliothek">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>Bibliothek</span>
+      </button>
+      <button class="nav-btn" id="nav-plan" onclick="showScreen('plan')" title="Lernplan">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Lernplan</span>
+      </button>
+      <button class="nav-btn" id="nav-timer" onclick="toggleTimer()" title="Timer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>Timer</span>
       </button>
     </nav>
-  </div>
-</header>
-
-<!-- ── Timer Panel ──────────────────────────────────────────────────────── -->
-<div class="timer-panel" id="timer-panel" style="display:none">
-  <div class="timer-header">
-    <span class="timer-mode-label" id="timer-mode-label">🍅 Pomodoro</span>
-    <button class="timer-close" id="timer-close">✕</button>
-  </div>
-  <div class="timer-ring-wrap">
-    <svg class="timer-ring" viewBox="0 0 120 120">
-      <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="6"/>
-      <circle cx="60" cy="60" r="54" fill="none" stroke="url(#timerGrad)" stroke-width="6"
-        stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="0" id="timer-ring-circle"
-        transform="rotate(-90 60 60)"/>
-      <defs><linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#a78bfa"/>
-        <stop offset="100%" stop-color="#38bdf8"/>
-      </linearGradient></defs>
-    </svg>
-    <div class="timer-display" id="timer-display">25:00</div>
-  </div>
-  <div class="timer-modes">
-    <button class="timer-mode-btn active" data-minutes="25">Lernen</button>
-    <button class="timer-mode-btn" data-minutes="5">Kurz</button>
-    <button class="timer-mode-btn" data-minutes="10">Lang</button>
-  </div>
-  <div class="timer-controls">
-    <button class="btn-timer-reset" id="timer-reset">↺</button>
-    <button class="btn-timer-toggle" id="timer-toggle">▶ Start</button>
-  </div>
-</div>
-
-<!-- ── Toast ──────────────────────────────────────────────────────────── -->
-<div class="toast" id="toast" role="alert"></div>
-
-<!-- ── Keyboard Hint ──────────────────────────────────────────────────── -->
-<div class="kb-hint" id="kb-hint" style="display:none">
-  <span><kbd>Space</kbd> Umdrehen</span>
-  <span><kbd>←</kbd> Nochmal</span>
-  <span><kbd>→</kbd> Gewusst</span>
-  <span><kbd>Esc</kbd> Zurück</span>
-</div>
-
-<!-- ── PWA Install Banner ─────────────────────────────────────────────── -->
-<div class="pwa-banner" id="pwa-banner" style="display:none">
-  <div>💻</div>
-  <div class="pwa-banner-text">
-    <strong>Als App installieren</strong>
-    <span>Direkt vom Desktop starten</span>
-  </div>
-  <button class="btn-pwa-install" id="pwa-install-btn">Installieren</button>
-  <button class="btn-pwa-dismiss" id="pwa-dismiss-btn">✕</button>
-</div>
-
-<!-- ════════════════════════════════════════════════════════════════════ -->
-<!-- SCREEN: HOME                                                        -->
-<!-- ════════════════════════════════════════════════════════════════════ -->
-<main class="screen active" id="screen-home">
-  <div class="home-wrap">
-    <div class="home-hero">
-      <h1>Willkommen bei <em>StudyAI</em> 👋</h1>
-      <p>Deine KI-gestützte Lernplattform. Erstelle Projekte und lerne smarter.</p>
-      <div class="home-hero-stats">
-        <div class="home-stat">
-          <div class="home-stat-num" id="home-stat-projects">0</div>
-          <div class="home-stat-label">Projekte</div>
-        </div>
-        <div class="home-stat">
-          <div class="home-stat-num" id="home-stat-sets">0</div>
-          <div class="home-stat-label">Lernsets</div>
-        </div>
-        <div class="home-stat">
-          <div class="home-stat-num" id="home-stat-streak">0</div>
-          <div class="home-stat-label">Tage Streak 🔥</div>
+    <div class="header-right">
+      <div class="streak-badge" id="streak-badge">🔥 <span id="streak-count">0</span></div>
+      <div class="user-menu" onclick="toggleUserMenu()">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div class="user-dropdown" id="user-dropdown" style="display:none">
+          <div class="user-dropdown-name" id="user-dropdown-name">–</div>
+          <div class="user-dropdown-email" id="user-dropdown-email">–</div>
+          <hr/>
+          <button onclick="toggleTheme()">🌙 Theme wechseln</button>
+          <button onclick="doLogout()">🚪 Abmelden</button>
         </div>
       </div>
     </div>
+  </header>
 
-    <p class="home-section-title">Meine Projekte</p>
-    <div class="projects-grid" id="projects-grid">
-      <!-- rendered by JS -->
-    </div>
-  </div>
-</main>
-
-<!-- ════════════════════════════════════════════════════════════════════ -->
-<!-- SCREEN: PROJECT INSIDE                                              -->
-<!-- ════════════════════════════════════════════════════════════════════ -->
-<main class="screen" id="screen-project">
-  <div class="project-inside-wrap">
-    <div class="project-inside-header">
-      <button class="btn-back" id="back-to-home">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-        Zurück
-      </button>
-      <div class="project-inside-icon" id="proj-icon">📚</div>
-      <div>
-        <div class="project-inside-name" id="proj-name">Projekt</div>
-        <div class="project-inside-sub" id="proj-sub">0 Lernsets</div>
+  <!-- ── DASHBOARD ──────────────────────────────────────────────────────────── -->
+  <div id="screen-dashboard" class="screen" style="display:none">
+    <div class="screen-topbar"><h2>Dashboard</h2></div>
+    <div class="dashboard-grid">
+      <div class="dash-card dash-welcome">
+        <div class="dash-welcome-text">
+          <h3 id="dash-greeting">Hallo! 👋</h3>
+          <p id="dash-subtitle">Bereit zum Lernen?</p>
+        </div>
+        <button class="btn-primary" onclick="showScreen('upload')">+ Neues Set</button>
+      </div>
+      <div class="dash-card">
+        <div class="dash-stat-label">Lernsets</div>
+        <div class="dash-stat-num" id="stat-sets">0</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-stat-label">Quiz absolviert</div>
+        <div class="dash-stat-num" id="stat-quizzes">0</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-stat-label">Ø Score</div>
+        <div class="dash-stat-num" id="stat-score">–</div>
+      </div>
+      <div class="dash-card dash-heatmap-card">
+        <div class="dash-card-title">Lernaktivität</div>
+        <div id="activity-heatmap" class="heatmap"></div>
+      </div>
+      <div class="dash-card dash-recent-card">
+        <div class="dash-card-title">Letzte Sets</div>
+        <div id="recent-sets-list"></div>
       </div>
     </div>
+  </div>
 
-    <div class="project-nav">
-      <button class="project-nav-btn active" data-section="dashboard">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        Dashboard
-      </button>
-      <button class="project-nav-btn" data-section="lernsets">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        Lernsets
-      </button>
-      <button class="project-nav-btn" data-section="probe">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        Probeprüfung
-      </button>
-      <button class="project-nav-btn" data-section="kiplan">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-        KI-Lernplan
+  <!-- ── UPLOAD ─────────────────────────────────────────────────────────────── -->
+  <div id="screen-upload" class="screen" style="display:none">
+    <div class="screen-topbar"><h2>Neues Lernset</h2></div>
+    <div class="upload-area" id="upload-area">
+      <div class="upload-icon">📄</div>
+      <p class="upload-title">Dokument hochladen</p>
+      <p class="upload-sub">PDF, Word, Bild oder Text</p>
+      <input type="file" id="file-input" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.webp" style="display:none" onchange="handleFile(this.files[0])"/>
+      <button class="btn-primary" onclick="document.getElementById('file-input').click()">Datei wählen</button>
+    </div>
+    <div id="file-preview" style="display:none">
+      <div class="file-preview-box">
+        <span id="file-preview-name"></span>
+        <button class="btn-ghost" onclick="resetUpload()">✕</button>
+      </div>
+    </div>
+    <div class="upload-options" id="upload-options" style="display:none">
+      <div class="upload-option-label">Was soll erstellt werden?</div>
+      <div class="mode-buttons">
+        <button class="mode-btn active" id="mode-all" onclick="setMode('all')">🎯 Alles</button>
+        <button class="mode-btn" id="mode-flashcards" onclick="setMode('flashcards')">🃏 Karteikarten</button>
+        <button class="mode-btn" id="mode-summary" onclick="setMode('summary')">📝 Zusammenfassung</button>
+        <button class="mode-btn" id="mode-quiz" onclick="setMode('quiz')">❓ Quiz</button>
+      </div>
+      <div class="upload-title-row">
+        <input type="text" id="set-title-input" placeholder="Titel des Lernsets..." class="title-input"/>
+      </div>
+      <button class="btn-primary btn-analyze" id="analyze-btn" onclick="analyzeDocument()">
+        <span id="analyze-btn-text">✨ Analysieren</span>
       </button>
     </div>
+    <div id="loading-overlay" style="display:none">
+      <div class="loading-spinner"></div>
+      <p id="loading-text">Analysiere Dokument...</p>
+    </div>
+  </div>
 
-    <!-- Dashboard Section -->
-    <div class="project-section active" id="proj-section-dashboard">
-      <div id="proj-dashboard-body"></div>
+  <!-- ── RESULT ─────────────────────────────────────────────────────────────── -->
+  <div id="screen-result" class="screen" style="display:none">
+    <div class="screen-topbar">
+      <button class="btn-ghost" onclick="showScreen('upload')">← Zurück</button>
+      <h2 id="result-title">Ergebnis</h2>
+      <button class="btn-primary" id="save-btn" onclick="saveSet()">💾 Speichern</button>
+    </div>
+    <div class="result-tabs">
+      <button class="result-tab active" id="rtab-flash" onclick="switchResultTab('flash')">🃏 Karteikarten</button>
+      <button class="result-tab" id="rtab-summary" onclick="switchResultTab('summary')">📝 Zusammenfassung</button>
+      <button class="result-tab" id="rtab-quiz" onclick="switchResultTab('quiz')">❓ Quiz</button>
     </div>
 
-    <!-- Lernsets Section -->
-    <div class="project-section" id="proj-section-lernsets">
-      <div class="lernset-actions">
-        <button class="btn-new-lernset" id="btn-new-lernset">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Neues Lernset
-        </button>
+    <!-- Flashcards -->
+    <div id="result-flash">
+      <div class="fc-progress-row">
+        <span id="fc-counter">1 / 1</span>
+        <div class="fc-progress-bar"><div id="fc-progress-fill" class="fc-progress-fill"></div></div>
       </div>
-      <div class="filter-bar" id="proj-filter-bar"></div>
-      <div class="library-grid" id="proj-library-grid"></div>
+      <div class="flashcard-wrap" id="fc-wrap">
+        <div class="flashcard" id="fc-card" onclick="flipCard()">
+          <div class="fc-face fc-front"><div class="fc-content" id="fc-front-text"></div></div>
+          <div class="fc-face fc-back"><div class="fc-content" id="fc-back-text"></div></div>
+        </div>
+      </div>
+      <div class="fc-flip-hint" id="fc-flip-hint">Klicken zum Umdrehen</div>
+      <div class="fc-actions" id="fc-actions">
+        <button class="fc-btn fc-btn-wrong" onclick="fcNav(-1)">← Zurück</button>
+        <div class="fc-difficulty">
+          <button class="diff-btn diff-easy" onclick="setDifficulty('easy')">😊 Leicht</button>
+          <button class="diff-btn diff-medium" onclick="setDifficulty('medium')">🤔 Mittel</button>
+          <button class="diff-btn diff-hard" onclick="setDifficulty('hard')">😰 Schwer</button>
+        </div>
+        <button class="fc-btn fc-btn-right" onclick="fcNav(1)">Weiter →</button>
+      </div>
+      <div class="fc-extra-actions">
+        <button class="btn-ghost" onclick="repeatHard()">🔁 Schwierige wiederholen</button>
+        <span id="fc-diff-badge" class="diff-badge"></span>
+      </div>
     </div>
 
-    <!-- Probeprüfung Section -->
-    <div class="project-section" id="proj-section-probe">
-      <div class="probe-config">
-        <h3>🧪 Probeprüfung konfigurieren</h3>
-        <p style="color:var(--text2);font-size:.88rem;margin-bottom:1rem">Die KI generiert prüfungsähnliche Fragen aus deinen Lernsets.</p>
-        <div style="margin-bottom:.75rem">
-          <label style="font-size:.82rem;color:var(--text2);display:block;margin-bottom:.35rem">Schwierigkeit</label>
-          <div class="probe-options" id="probe-difficulty">
-            <button class="probe-option active" data-val="mittel">Mittel</button>
-            <button class="probe-option" data-val="einfach">Einfach</button>
-            <button class="probe-option" data-val="schwer">Schwer</button>
-            <button class="probe-option" data-val="prüfung">Prüfungsniveau</button>
+    <!-- Summary -->
+    <div id="result-summary" style="display:none">
+      <div class="summary-wrap" id="summary-content"></div>
+    </div>
+
+    <!-- Quiz -->
+    <div id="result-quiz" style="display:none">
+      <div id="quiz-start-screen">
+        <div class="quiz-start-card">
+          <h3>Quiz starten</h3>
+          <p id="quiz-start-info"></p>
+          <button class="btn-primary" onclick="startQuiz()">Quiz starten →</button>
+        </div>
+      </div>
+      <div id="quiz-play-screen" style="display:none">
+        <div class="quiz-q-meta">
+          <div class="quiz-q-num" id="quiz-q-num">Frage 1/10</div>
+          <div class="quiz-q-type-badge" id="quiz-q-type"></div>
+        </div>
+        <div class="quiz-progress-bar"><div id="quiz-progress-fill" class="quiz-progress-fill"></div></div>
+        <div class="quiz-question-card">
+          <p class="quiz-question-text" id="quiz-question-text"></p>
+          <div id="quiz-options-wrap"></div>
+          <div id="quiz-freetext-wrap" style="display:none">
+            <textarea id="quiz-freetext-input" placeholder="Deine Antwort..." rows="3"></textarea>
+            <button class="btn-primary" onclick="submitFreetext()">Antwort prüfen</button>
+          </div>
+          <div id="quiz-feedback" style="display:none">
+            <div id="quiz-feedback-text"></div>
+            <button class="btn-ghost" id="quiz-explain-btn" onclick="explainAnswer()">💡 Erklärung</button>
+            <div id="quiz-explanation" style="display:none"></div>
           </div>
         </div>
-        <div style="margin-bottom:.75rem">
-          <label style="font-size:.82rem;color:var(--text2);display:block;margin-bottom:.35rem">Fragenanzahl</label>
-          <div class="probe-options" id="probe-count">
-            <button class="probe-option" data-val="5">5</button>
-            <button class="probe-option active" data-val="10">10</button>
-            <button class="probe-option" data-val="15">15</button>
-            <button class="probe-option" data-val="20">20</button>
+        <button class="btn-primary quiz-next-btn" id="quiz-next-btn" style="display:none" onclick="nextQuestion()">Weiter →</button>
+      </div>
+      <div id="quiz-result-screen" style="display:none">
+        <div class="quiz-result-card">
+          <div class="quiz-result-score" id="quiz-result-score"></div>
+          <p id="quiz-result-text"></p>
+          <div id="quiz-weakness-wrap" style="display:none">
+            <div class="quiz-weakness-title">📊 Schwächenanalyse</div>
+            <div id="quiz-weakness-text"></div>
+          </div>
+          <div class="quiz-result-actions">
+            <button class="btn-ghost" onclick="restartQuiz()">🔁 Wiederholen</button>
+            <button class="btn-primary" onclick="showScreen('library')">📚 Zur Bibliothek</button>
           </div>
         </div>
-        <div style="margin-bottom:1rem">
-          <label style="font-size:.82rem;color:var(--text2);display:block;margin-bottom:.35rem">Fragetypen</label>
-          <div class="probe-options" id="probe-types">
-            <button class="probe-option active" data-val="gemischt">Gemischt</button>
-            <button class="probe-option" data-val="mc">Multiple Choice</button>
-            <button class="probe-option" data-val="offen">Offen</button>
-          </div>
-        </div>
-        <button class="btn-start-probe" id="btn-start-probe">🚀 Probeprüfung starten</button>
       </div>
-      <div id="probe-sets-info" style="color:var(--text2);font-size:.85rem;text-align:center;padding:1rem"></div>
-    </div>
-
-    <!-- KI Lernplan Section -->
-    <div class="project-section" id="proj-section-kiplan">
-      <div class="ki-plan-config">
-        <h3>🤖 KI-Lernplan generieren</h3>
-        <p style="color:var(--text2);font-size:.88rem;margin-bottom:1rem">Die KI erstellt einen personalisierten Lernplan und trägt Termine im Kalender ein.</p>
-        <div class="ki-plan-field">
-          <label>Prüfungsdatum</label>
-          <input type="date" id="ki-plan-exam-date" />
-        </div>
-        <div class="ki-plan-field">
-          <label>Themen / Fächer</label>
-          <input type="text" id="ki-plan-topics" placeholder="z.B. Mathe, Physik, Geschichte…" />
-        </div>
-        <div class="ki-plan-field">
-          <label>Verfügbare Lernzeit pro Tag</label>
-          <select id="ki-plan-hours">
-            <option value="30min">30 Minuten</option>
-            <option value="1h" selected>1 Stunde</option>
-            <option value="2h">2 Stunden</option>
-            <option value="3h">3+ Stunden</option>
-          </select>
-        </div>
-        <div class="ki-plan-field">
-          <label>Aktuelles Niveau (optional)</label>
-          <textarea id="ki-plan-notes" rows="2" placeholder="z.B. Kapitel 1-3 schon gut, Kapitel 4 muss noch geübt werden…"></textarea>
-        </div>
-        <button class="btn-ki-generate" id="btn-ki-generate">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-          Lernplan generieren
-        </button>
-      </div>
-      <div id="ki-plan-result-area"></div>
-      <div id="proj-plan-list"></div>
     </div>
   </div>
-</main>
 
-<!-- ════════════════════════════════════════════════════════════════════ -->
-<!-- SCREEN: UPLOAD (inside project context)                            -->
-<!-- ════════════════════════════════════════════════════════════════════ -->
-<main class="screen" id="screen-upload">
-  <div class="screen-topbar">
-    <button class="btn-back" id="back-from-upload">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      Zurück
-    </button>
-    <h2 class="topbar-title">Neues Lernset</h2>
+  <!-- ── LIBRARY ─────────────────────────────────────────────────────────────── -->
+  <div id="screen-library" class="screen" style="display:none">
+    <div class="screen-topbar"><h2>Bibliothek</h2></div>
+    <div class="library-toolbar">
+      <input type="text" id="lib-search" placeholder="Suchen..." oninput="filterLibrary()" class="lib-search-input"/>
+      <div class="subject-filters" id="subject-filters"></div>
+    </div>
+    <div id="library-loading" class="loading-hint" style="display:none">Lade Sets...</div>
+    <div id="library-empty" class="empty-hint" style="display:none">Noch keine Sets gespeichert. Lade ein Dokument hoch!</div>
+    <div class="library-grid" id="library-grid"></div>
   </div>
-  <div class="upload-card" style="max-width:640px;margin:0 auto">
-    <div class="upload-zone" id="upload-zone" role="button" tabindex="0">
-      <div class="upload-zone-bg"></div>
-      <div class="upload-zone-content">
-        <div class="upload-icon-wrap">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        </div>
-        <p class="upload-title">Datei hochladen</p>
-        <p class="upload-sub">Drag & Drop oder klicken</p>
-        <div class="upload-types-wrap">
-          <span class="upload-type-badge">PDF</span>
-          <span class="upload-type-badge">Word</span>
-          <span class="upload-type-badge">TXT</span>
-          <span class="upload-type-badge">Bild</span>
-        </div>
-      </div>
-    </div>
-    <input type="file" id="file-input" accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.gif,.webp" hidden />
-    <div class="file-preview" id="file-preview" style="display:none"></div>
 
-    <div class="mode-section">
-      <p class="section-label">Lernmodus</p>
-      <div class="mode-grid">
-        <button class="mode-card selected" data-mode="flashcards">
-          <div class="mode-card-icon">🗂️</div>
-          <div class="mode-card-body">
-            <div class="mode-card-name">Karteikarten</div>
-            <div class="mode-card-desc">Interaktive Flip-Karten</div>
-          </div>
-          <div class="mode-card-check">✓</div>
-        </button>
-        <button class="mode-card" data-mode="summary">
-          <div class="mode-card-icon">📝</div>
-          <div class="mode-card-body">
-            <div class="mode-card-name">Zusammenfassung</div>
-            <div class="mode-card-desc">Strukturierte Übersicht</div>
-          </div>
-          <div class="mode-card-check">✓</div>
-        </button>
-        <button class="mode-card" data-mode="quiz">
-          <div class="mode-card-icon">🎯</div>
-          <div class="mode-card-body">
-            <div class="mode-card-name">Quiz</div>
-            <div class="mode-card-desc">MC, Wahr/Falsch & Freitext</div>
-          </div>
-          <div class="mode-card-check">✓</div>
-        </button>
-      </div>
+  <!-- ── STUDYSET VIEW ──────────────────────────────────────────────────────── -->
+  <div id="screen-studyset" class="screen" style="display:none">
+    <div class="screen-topbar">
+      <button class="btn-ghost" onclick="showScreen('library')">← Zurück</button>
+      <h2 id="studyset-title">Set</h2>
+      <button class="btn-ghost btn-danger" onclick="deleteCurrentSet()">🗑️ Löschen</button>
     </div>
-
-    <div class="options-row">
-      <div class="option-group">
-        <span class="option-label">Anzahl</span>
-        <div class="option-pills">
-          <button class="opt-pill" data-count="5">5</button>
-          <button class="opt-pill active" data-count="10">10</button>
-          <button class="opt-pill" data-count="15">15</button>
-        </div>
-      </div>
-      <div class="option-group">
-        <span class="option-label">Sprache</span>
-        <div class="option-pills">
-          <button class="opt-pill active" data-lang="auto">Auto</button>
-          <button class="opt-pill" data-lang="de">DE</button>
-          <button class="opt-pill" data-lang="en">EN</button>
-        </div>
-      </div>
+    <div class="result-tabs">
+      <button class="result-tab active" id="sstab-flash" onclick="switchSSTab('flash')">🃏 Karteikarten</button>
+      <button class="result-tab" id="sstab-summary" onclick="switchSSTab('summary')">📝 Zusammenfassung</button>
+      <button class="result-tab" id="sstab-quiz" onclick="switchSSTab('quiz')">❓ Quiz</button>
     </div>
-
-    <button class="btn-analyze" id="analyze-btn" disabled>
-      <span class="btn-analyze-text">Jetzt analysieren</span>
-      <span class="btn-analyze-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
-    </button>
+    <div id="ss-flash"></div>
+    <div id="ss-summary" style="display:none"></div>
+    <div id="ss-quiz" style="display:none"></div>
   </div>
-</main>
 
-<!-- LOADING ──────────────────────────────────────────────────────────── -->
-<main class="screen" id="screen-loading">
-  <div class="loading-scene">
-    <div class="loading-visual">
-      <div class="loading-pulse"></div>
-      <div class="loading-pulse delay-1"></div>
-      <div class="loading-pulse delay-2"></div>
-      <div class="loading-icon">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-      </div>
+  <!-- ── LERNPLAN ───────────────────────────────────────────────────────────── -->
+  <div id="screen-plan" class="screen" style="display:none">
+    <div class="screen-topbar">
+      <h2>Lernplan</h2>
+      <button class="btn-primary" onclick="openAddPlanModal()">+ Ziel hinzufügen</button>
     </div>
-    <h2 class="loading-title">Analysiere Dokument</h2>
-    <p class="loading-sub" id="loading-sub">Die KI liest deinen Inhalt…</p>
-    <div class="loading-dots"><span></span><span></span><span></span></div>
+    <div id="plan-loading" class="loading-hint" style="display:none">Lade Lernplan...</div>
+    <div id="plan-list"></div>
   </div>
-</main>
 
-<!-- FLASHCARDS ──────────────────────────────────────────────────────── -->
-<main class="screen" id="screen-flashcards">
-  <div class="screen-topbar">
-    <button class="btn-back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Zurück</button>
-    <div class="topbar-actions">
-      <button class="btn-save btn-pill" data-mode="flashcards">💾 Speichern</button>
+  <!-- POMODORO TIMER -->
+  <div class="timer-panel" id="timer-panel" style="display:none">
+    <div class="timer-header">
+      <span id="timer-mode-label">🍅 Pomodoro</span>
+      <button class="btn-ghost timer-close" onclick="toggleTimer()">✕</button>
+    </div>
+    <div class="timer-ring-wrap">
+      <svg class="timer-ring" viewBox="0 0 120 120">
+        <circle class="timer-ring-bg" cx="60" cy="60" r="54"/>
+        <circle class="timer-ring-fill" id="timer-ring-fill" cx="60" cy="60" r="54"/>
+      </svg>
+      <div class="timer-display" id="timer-display">25:00</div>
+    </div>
+    <div class="timer-modes">
+      <button class="timer-mode-btn active" data-minutes="25">🍅 25min</button>
+      <button class="timer-mode-btn" data-minutes="5">☕ 5min</button>
+      <button class="timer-mode-btn" data-minutes="10">🌿 10min</button>
+    </div>
+    <div class="timer-controls">
+      <button class="btn-primary" id="timer-start-btn" onclick="toggleTimerRun()">▶ Start</button>
+      <button class="btn-ghost" onclick="resetTimer()">↺ Reset</button>
     </div>
   </div>
-  <div id="fc-container"></div>
-</main>
 
-<!-- SUMMARY ──────────────────────────────────────────────────────────── -->
-<main class="screen" id="screen-summary">
-  <div class="screen-topbar">
-    <button class="btn-back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Zurück</button>
-    <div class="topbar-actions">
-      <button class="btn-save btn-pill" data-mode="summary">💾 Speichern</button>
-      <button class="btn-pill" id="summary-export">🖨️ Drucken</button>
+  <!-- MODALS -->
+  <div id="modal-overlay" class="modal-overlay" style="display:none" onclick="closeModal()">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div id="modal-content"></div>
     </div>
   </div>
-  <div class="summary-wrap"><div class="summary-content" id="summary-content"></div></div>
-</main>
 
-<!-- QUIZ ──────────────────────────────────────────────────────────────── -->
-<main class="screen" id="screen-quiz">
-  <div class="screen-topbar">
-    <button class="btn-back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Zurück</button>
-    <div class="topbar-actions">
-      <button class="btn-save btn-pill" data-mode="quiz">💾 Speichern</button>
-    </div>
-  </div>
-  <div class="quiz-wrap" id="quiz-body"></div>
-</main>
-
-<!-- KALENDER ─────────────────────────────────────────────────────────── -->
-<main class="screen" id="screen-calendar">
-  <div class="calendar-wrap">
-    <div class="screen-topbar" style="margin-bottom:1.5rem">
-      <button class="btn-back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Zurück</button>
-      <h2 class="topbar-title">Kalender</h2>
-      <button class="btn-pill" id="cal-add-deadline">+ Abgabe</button>
-    </div>
-    <div class="calendar-header">
-      <div class="calendar-nav-btns">
-        <button class="cal-nav-btn" id="cal-prev">‹</button>
-        <button class="cal-nav-btn" id="cal-next">›</button>
-      </div>
-      <div class="calendar-title" id="cal-month-title">Juni 2026</div>
-    </div>
-    <div class="calendar-grid" id="calendar-grid">
-      <div class="cal-day-header">Mo</div>
-      <div class="cal-day-header">Di</div>
-      <div class="cal-day-header">Mi</div>
-      <div class="cal-day-header">Do</div>
-      <div class="cal-day-header">Fr</div>
-      <div class="cal-day-header">Sa</div>
-      <div class="cal-day-header">So</div>
-      <!-- days rendered by JS -->
-    </div>
-    <div class="cal-legend">
-      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--purple)"></div>Lernplan</div>
-      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--amber)"></div>Abgaben</div>
-      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--green)"></div>KI-Termine</div>
-    </div>
-  </div>
-</main>
-
-<!-- ── Modals ──────────────────────────────────────────────────────── -->
-
-<!-- Neues Projekt Modal -->
-<div class="modal-backdrop" id="project-modal-backdrop">
-  <div class="modal modal-project">
-    <div class="modal-icon">📁</div>
-    <h3 id="project-modal-title">Neues Projekt</h3>
-    <div class="modal-field">
-      <label>Projektname</label>
-      <input type="text" id="proj-modal-name" placeholder="z.B. Mathematik Prüfung" />
-    </div>
-    <div class="modal-field">
-      <label>Farbe</label>
-      <div class="color-picker" id="color-picker">
-        <div class="color-dot selected" data-color="#a78bfa" style="background:#a78bfa"></div>
-        <div class="color-dot" data-color="#38bdf8" style="background:#38bdf8"></div>
-        <div class="color-dot" data-color="#34d399" style="background:#34d399"></div>
-        <div class="color-dot" data-color="#fbbf24" style="background:#fbbf24"></div>
-        <div class="color-dot" data-color="#f87171" style="background:#f87171"></div>
-        <div class="color-dot" data-color="#fb923c" style="background:#fb923c"></div>
-        <div class="color-dot" data-color="#e879f9" style="background:#e879f9"></div>
-      </div>
-    </div>
-    <div class="modal-field">
-      <label>Icon</label>
-      <div class="icon-picker" id="icon-picker">
-        <button class="icon-btn selected" data-icon="📚">📚</button>
-        <button class="icon-btn" data-icon="🧮">🧮</button>
-        <button class="icon-btn" data-icon="🔬">🔬</button>
-        <button class="icon-btn" data-icon="📖">📖</button>
-        <button class="icon-btn" data-icon="🌍">🌍</button>
-        <button class="icon-btn" data-icon="💻">💻</button>
-        <button class="icon-btn" data-icon="🎨">🎨</button>
-        <button class="icon-btn" data-icon="🎵">🎵</button>
-        <button class="icon-btn" data-icon="⚽">⚽</button>
-        <button class="icon-btn" data-icon="🏛️">🏛️</button>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-modal-cancel" id="proj-modal-cancel">Abbrechen</button>
-      <button class="btn-modal-confirm" id="proj-modal-confirm">Erstellen</button>
-    </div>
-  </div>
+  <div id="toast" class="toast"></div>
+  <canvas id="confetti-canvas" style="position:fixed;top:0;left:0;pointer-events:none;z-index:9999;width:100%;height:100%"></canvas>
 </div>
 
-<!-- Save Lernset Modal -->
-<div class="modal-backdrop" id="save-backdrop">
-  <div class="modal">
-    <div class="modal-icon">💾</div>
-    <h3 id="modal-save-title">Lernset speichern</h3>
-    <p id="modal-save-desc">Wird im Projekt gespeichert.</p>
-    <div class="modal-field"><label>Titel</label><input type="text" id="save-title" placeholder="z.B. Biologie Kapitel 3" /></div>
-    <div class="modal-field"><label>Fach</label><input type="text" id="save-subject" placeholder="z.B. Biologie" list="subject-list" /><datalist id="subject-list"></datalist></div>
-    <div class="modal-actions">
-      <button class="btn-modal-cancel" id="save-cancel">Abbrechen</button>
-      <button class="btn-modal-confirm" id="save-confirm">Speichern</button>
-    </div>
-  </div>
-</div>
-
-<!-- Abgabe/Deadline Modal -->
-<div class="modal-backdrop" id="deadline-modal-backdrop">
-  <div class="modal modal-deadline">
-    <div class="modal-icon">📅</div>
-    <h3>Abgabe / Termin</h3>
-    <div class="modal-field"><label>Titel</label><input type="text" id="deadline-title" placeholder="z.B. Mathe Abgabe" /></div>
-    <div class="modal-field"><label>Datum</label><input type="date" id="deadline-date" /></div>
-    <div class="modal-field">
-      <label>Typ</label>
-      <select id="deadline-type" style="width:100%;background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:.6rem .9rem;color:var(--text1);font-size:.9rem;">
-        <option value="deadline">Abgabe</option>
-        <option value="exam">Prüfung</option>
-        <option value="plan">Lernziel</option>
-      </select>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-modal-cancel" id="deadline-cancel">Abbrechen</button>
-      <button class="btn-modal-confirm" id="deadline-confirm">Hinzufügen</button>
-    </div>
-  </div>
-</div>
-
-<!-- KI Erklärung Modal -->
-<div class="modal-backdrop" id="explain-backdrop">
-  <div class="modal modal-wide">
-    <div class="modal-icon">🤖</div>
-    <h3>KI-Erklärung</h3>
-    <div class="explain-loading" id="explain-loading">
-      <div class="loading-dots"><span></span><span></span><span></span></div>
-      <p>KI denkt nach…</p>
-    </div>
-    <div class="explain-content" id="explain-content" style="display:none"></div>
-    <div class="modal-actions">
-      <button class="btn-modal-confirm" id="explain-close">Schliessen</button>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="app.js"></script>
-<script>
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
-</script>
 </body>
 </html>
