@@ -7,10 +7,148 @@
   <meta name="description" content="KI-gestützte Lernapp" />
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#080810" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="StudyAI" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── v4 Additions ── */
+    .screen { display:none; }
+    .screen.active { display:block; }
+
+    /* HOME */
+    .home-wrap { max-width:900px; margin:0 auto; padding:2rem 1.5rem 4rem; }
+    .home-hero { text-align:center; padding:3rem 0 2rem; }
+    .home-hero h1 { font-size:clamp(2rem,5vw,3.2rem); font-family:'Instrument Serif',serif; margin-bottom:0.5rem; }
+    .home-hero p { color:var(--text2); font-size:1.05rem; margin-bottom:2rem; }
+    .home-hero-stats { display:flex; gap:2rem; justify-content:center; flex-wrap:wrap; margin-bottom:2.5rem; }
+    .home-stat { text-align:center; }
+    .home-stat-num { font-size:2rem; font-weight:700; background:var(--grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .home-stat-label { font-size:0.75rem; color:var(--text2); text-transform:uppercase; letter-spacing:.08em; }
+
+    .home-actions { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; margin-bottom:3rem; }
+    .btn-home-primary { background:var(--grad); color:#fff; border:none; border-radius:14px; padding:.85rem 2rem; font-size:1rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:.5rem; transition:opacity .2s,transform .2s; }
+    .btn-home-primary:hover { opacity:.9; transform:translateY(-1px); }
+    .btn-home-secondary { background:var(--glass); border:1px solid var(--border); color:var(--text1); border-radius:14px; padding:.85rem 1.5rem; font-size:.95rem; font-weight:500; cursor:pointer; display:flex; align-items:center; gap:.5rem; transition:background .2s,transform .2s; }
+    .btn-home-secondary:hover { background:var(--glass2); transform:translateY(-1px); }
+
+    .home-section-title { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--text2); margin:0 0 1rem; }
+    .projects-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1rem; margin-bottom:2.5rem; }
+    .project-card { background:var(--glass); border:1px solid var(--border); border-radius:18px; padding:1.4rem 1.4rem 1.2rem; cursor:pointer; transition:transform .2s,border-color .2s,box-shadow .2s; position:relative; overflow:hidden; }
+    .project-card::before { content:''; position:absolute; inset:0; background:var(--grad); opacity:0; transition:opacity .2s; }
+    .project-card:hover { transform:translateY(-3px); border-color:var(--purple); box-shadow:0 8px 30px rgba(167,139,250,.15); }
+    .project-card-icon { font-size:2rem; margin-bottom:.75rem; }
+    .project-card-name { font-weight:600; font-size:1.05rem; margin-bottom:.25rem; }
+    .project-card-meta { font-size:.8rem; color:var(--text2); display:flex; gap:.75rem; align-items:center; }
+    .project-card-color { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .project-card-actions { position:absolute; top:.75rem; right:.75rem; display:flex; gap:.4rem; opacity:0; transition:opacity .2s; }
+    .project-card:hover .project-card-actions { opacity:1; }
+    .project-action-btn { background:rgba(0,0,0,.4); border:none; border-radius:8px; padding:.3rem .5rem; cursor:pointer; font-size:.8rem; color:var(--text2); transition:color .2s; }
+    .project-action-btn:hover { color:var(--text1); }
+    .project-card-add { border:2px dashed var(--border); background:transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.5rem; min-height:120px; color:var(--text2); transition:border-color .2s,color .2s; }
+    .project-card-add:hover { border-color:var(--purple); color:var(--purple); }
+    .project-card-add svg { opacity:.5; }
+    .project-card-add span { font-size:.9rem; font-weight:500; }
+
+    /* PROJECT MODAL */
+    .modal-project { max-width:420px; }
+    .color-picker { display:flex; gap:.6rem; flex-wrap:wrap; margin-top:.5rem; }
+    .color-dot { width:28px; height:28px; border-radius:50%; cursor:pointer; border:3px solid transparent; transition:transform .15s,border-color .15s; }
+    .color-dot.selected { border-color:#fff; transform:scale(1.15); }
+    .icon-picker { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.5rem; }
+    .icon-btn { background:var(--glass2); border:1px solid var(--border); border-radius:10px; padding:.4rem .6rem; font-size:1.2rem; cursor:pointer; transition:background .2s,border-color .2s; }
+    .icon-btn.selected { background:rgba(167,139,250,.2); border-color:var(--purple); }
+
+    /* PROJECT INSIDE */
+    .project-inside-wrap { max-width:900px; margin:0 auto; padding:1.5rem; }
+    .project-inside-header { display:flex; align-items:center; gap:1rem; margin-bottom:2rem; padding-bottom:1.5rem; border-bottom:1px solid var(--border); }
+    .project-inside-icon { font-size:2.5rem; }
+    .project-inside-name { font-size:1.5rem; font-weight:700; }
+    .project-inside-sub { font-size:.85rem; color:var(--text2); }
+    .project-nav { display:flex; gap:.6rem; flex-wrap:wrap; margin-bottom:2rem; }
+    .project-nav-btn { background:var(--glass); border:1px solid var(--border); border-radius:12px; padding:.6rem 1.1rem; font-size:.88rem; font-weight:500; cursor:pointer; color:var(--text2); transition:all .2s; display:flex; align-items:center; gap:.4rem; }
+    .project-nav-btn:hover, .project-nav-btn.active { background:rgba(167,139,250,.15); border-color:var(--purple); color:var(--purple); }
+    .project-section { display:none; }
+    .project-section.active { display:block; }
+
+    /* LERNSETS INSIDE PROJECT */
+    .lernset-actions { display:flex; gap:.75rem; margin-bottom:1.5rem; flex-wrap:wrap; }
+    .btn-new-lernset { background:var(--grad); color:#fff; border:none; border-radius:12px; padding:.65rem 1.2rem; font-size:.9rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:.4rem; }
+    .btn-new-lernset:hover { opacity:.9; }
+
+    /* PROBEPRÜFUNG */
+    .probe-config { background:var(--glass); border:1px solid var(--border); border-radius:16px; padding:1.5rem; margin-bottom:1.5rem; }
+    .probe-config h3 { margin-bottom:1rem; font-size:1rem; }
+    .probe-options { display:flex; gap:.75rem; flex-wrap:wrap; margin-bottom:1rem; }
+    .probe-option { background:var(--glass2); border:1px solid var(--border); border-radius:10px; padding:.5rem 1rem; cursor:pointer; font-size:.88rem; color:var(--text2); transition:all .2s; }
+    .probe-option.active { background:rgba(167,139,250,.15); border-color:var(--purple); color:var(--purple); font-weight:600; }
+    .btn-start-probe { background:var(--grad); color:#fff; border:none; border-radius:12px; padding:.75rem 1.5rem; font-size:.95rem; font-weight:600; cursor:pointer; width:100%; margin-top:.5rem; }
+    .btn-start-probe:hover { opacity:.9; }
+    .probe-empty { text-align:center; padding:3rem; color:var(--text2); }
+    .probe-empty-icon { font-size:3rem; margin-bottom:1rem; }
+
+    /* GLOBAL CALENDAR */
+    .calendar-wrap { max-width:900px; margin:0 auto; padding:1.5rem; }
+    .calendar-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; }
+    .calendar-title { font-size:1.3rem; font-weight:700; }
+    .calendar-nav-btns { display:flex; gap:.5rem; }
+    .cal-nav-btn { background:var(--glass); border:1px solid var(--border); border-radius:10px; padding:.4rem .8rem; cursor:pointer; color:var(--text1); font-size:.9rem; transition:background .2s; }
+    .cal-nav-btn:hover { background:var(--glass2); }
+    .calendar-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+    .cal-day-header { text-align:center; font-size:.7rem; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.06em; padding:.5rem 0; }
+    .cal-day { min-height:80px; background:var(--glass); border:1px solid var(--border); border-radius:10px; padding:.4rem; position:relative; transition:background .2s; }
+    .cal-day:hover { background:var(--glass2); }
+    .cal-day.today { border-color:var(--purple); }
+    .cal-day.other-month { opacity:.35; }
+    .cal-day-num { font-size:.78rem; font-weight:600; margin-bottom:.3rem; }
+    .cal-day.today .cal-day-num { color:var(--purple); }
+    .cal-event { font-size:.65rem; padding:.15rem .35rem; border-radius:5px; margin-bottom:.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
+    .cal-event.type-plan { background:rgba(167,139,250,.25); color:var(--purple); }
+    .cal-event.type-deadline { background:rgba(251,191,36,.2); color:var(--amber); }
+    .cal-event.type-ai { background:rgba(52,211,153,.2); color:var(--green); }
+    .cal-legend { display:flex; gap:1rem; flex-wrap:wrap; margin-top:1rem; }
+    .cal-legend-item { display:flex; align-items:center; gap:.4rem; font-size:.78rem; color:var(--text2); }
+    .cal-legend-dot { width:8px; height:8px; border-radius:50%; }
+
+    /* KI LERNPLAN */
+    .ki-plan-config { background:var(--glass); border:1px solid var(--border); border-radius:16px; padding:1.5rem; margin-bottom:1.5rem; }
+    .ki-plan-config h3 { font-size:1rem; margin-bottom:1rem; }
+    .ki-plan-field { margin-bottom:1rem; }
+    .ki-plan-field label { display:block; font-size:.82rem; color:var(--text2); margin-bottom:.35rem; }
+    .ki-plan-field input, .ki-plan-field textarea, .ki-plan-field select { width:100%; background:var(--glass2); border:1px solid var(--border); border-radius:10px; padding:.6rem .9rem; color:var(--text1); font-size:.9rem; font-family:inherit; resize:vertical; }
+    .ki-plan-field input:focus, .ki-plan-field textarea:focus { outline:none; border-color:var(--purple); }
+    .btn-ki-generate { background:var(--grad); color:#fff; border:none; border-radius:12px; padding:.75rem 1.5rem; font-size:.95rem; font-weight:600; cursor:pointer; width:100%; display:flex; align-items:center; justify-content:center; gap:.5rem; }
+    .btn-ki-generate:hover { opacity:.9; }
+    .ki-plan-result { background:var(--glass); border:1px solid var(--border); border-radius:16px; padding:1.5rem; }
+    .ki-plan-result h3 { font-size:1rem; margin-bottom:1rem; }
+
+    /* PWA INSTALL BANNER */
+    .pwa-banner { position:fixed; bottom:1rem; left:50%; transform:translateX(-50%); background:var(--glass); border:1px solid var(--purple); border-radius:16px; padding:.8rem 1.2rem; display:flex; align-items:center; gap:.75rem; backdrop-filter:blur(20px); z-index:200; box-shadow:0 8px 30px rgba(0,0,0,.3); max-width:360px; width:calc(100% - 2rem); }
+    .pwa-banner-text { flex:1; font-size:.85rem; }
+    .pwa-banner-text strong { display:block; font-size:.9rem; margin-bottom:.1rem; }
+    .pwa-banner-text span { color:var(--text2); font-size:.8rem; }
+    .btn-pwa-install { background:var(--grad); color:#fff; border:none; border-radius:10px; padding:.45rem .9rem; font-size:.82rem; font-weight:600; cursor:pointer; white-space:nowrap; }
+    .btn-pwa-dismiss { background:none; border:none; color:var(--text2); cursor:pointer; font-size:1.2rem; padding:.2rem; }
+
+    /* DEADLINE MODAL */
+    .modal-deadline { max-width:380px; }
+
+    /* NAV v4 */
+    .nav-btn-home { background:none; border:none; color:var(--text2); cursor:pointer; display:flex; align-items:center; gap:.4rem; font-size:.85rem; padding:.4rem .7rem; border-radius:10px; transition:background .2s,color .2s; }
+    .nav-btn-home:hover { background:var(--glass); color:var(--text1); }
+    .nav-btn-home svg { opacity:.7; }
+
+    @media(max-width:600px) {
+      .calendar-grid { gap:2px; }
+      .cal-day { min-height:55px; padding:.25rem; }
+      .cal-day-num { font-size:.7rem; }
+      .cal-event { font-size:.58rem; }
+      .projects-grid { grid-template-columns:1fr; }
+    }
+  </style>
 </head>
 <body>
 
@@ -28,7 +166,7 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
       </div>
       <span class="logo-text">StudyAI</span>
-      <span class="logo-badge">BETA</span>
+      <span class="logo-badge">v4</span>
     </button>
 
     <div class="header-streak" id="header-streak" title="Lernstreak">
@@ -37,17 +175,9 @@
     </div>
 
     <nav class="header-nav">
-      <button class="nav-btn" id="nav-dashboard">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        <span>Dashboard</span>
-      </button>
-      <button class="nav-btn" id="nav-library">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        <span>Bibliothek</span>
-      </button>
-      <button class="nav-btn" id="nav-plan">
+      <button class="nav-btn nav-btn-home" id="nav-calendar">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span>Lernplan</span>
+        <span>Kalender</span>
       </button>
       <button class="nav-icon-btn" id="nav-timer" title="Pomodoro">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -89,10 +219,10 @@
   </div>
 </div>
 
-<!-- ── Toast ──────────────────────────────────────────────────────────────── -->
+<!-- ── Toast ──────────────────────────────────────────────────────────── -->
 <div class="toast" id="toast" role="alert"></div>
 
-<!-- ── Keyboard Shortcuts Hint ───────────────────────────────────────────── -->
+<!-- ── Keyboard Hint ──────────────────────────────────────────────────── -->
 <div class="kb-hint" id="kb-hint" style="display:none">
   <span><kbd>Space</kbd> Umdrehen</span>
   <span><kbd>←</kbd> Nochmal</span>
@@ -100,26 +230,186 @@
   <span><kbd>Esc</kbd> Zurück</span>
 </div>
 
-<!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- SCREENS                                                                 -->
-<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- ── PWA Install Banner ─────────────────────────────────────────────── -->
+<div class="pwa-banner" id="pwa-banner" style="display:none">
+  <div>💻</div>
+  <div class="pwa-banner-text">
+    <strong>Als App installieren</strong>
+    <span>Direkt vom Desktop starten</span>
+  </div>
+  <button class="btn-pwa-install" id="pwa-install-btn">Installieren</button>
+  <button class="btn-pwa-dismiss" id="pwa-dismiss-btn">✕</button>
+</div>
 
-<!-- UPLOAD ──────────────────────────────────────────────────────────────── -->
-<main class="screen active" id="screen-upload">
-  <div class="upload-hero">
-    <div class="hero-eyebrow"><span class="eyebrow-dot"></span>KI-gestütztes Lernen</div>
-    <h1 class="hero-title">Verwandle jedes<br/><em>Dokument</em> in<br/>Lernmaterial.</h1>
-    <p class="hero-sub">PDF, Word, Text oder Bild – StudyAI erstellt Karteikarten, Quiz und Zusammenfassungen in Sekunden.</p>
-    <div class="hero-stats">
-      <div class="hero-stat"><span class="stat-num" id="stat-total-sets">0</span><span class="stat-label">Lernsets</span></div>
-      <div class="hero-stat-div"></div>
-      <div class="hero-stat"><span class="stat-num" id="stat-total-sessions">0</span><span class="stat-label">Sessions</span></div>
-      <div class="hero-stat-div"></div>
-      <div class="hero-stat"><span class="stat-num" id="stat-streak">0</span><span class="stat-label">Tage Streak</span></div>
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- SCREEN: HOME                                                        -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<main class="screen active" id="screen-home">
+  <div class="home-wrap">
+    <div class="home-hero">
+      <h1>Willkommen bei <em>StudyAI</em> 👋</h1>
+      <p>Deine KI-gestützte Lernplattform. Erstelle Projekte und lerne smarter.</p>
+      <div class="home-hero-stats">
+        <div class="home-stat">
+          <div class="home-stat-num" id="home-stat-projects">0</div>
+          <div class="home-stat-label">Projekte</div>
+        </div>
+        <div class="home-stat">
+          <div class="home-stat-num" id="home-stat-sets">0</div>
+          <div class="home-stat-label">Lernsets</div>
+        </div>
+        <div class="home-stat">
+          <div class="home-stat-num" id="home-stat-streak">0</div>
+          <div class="home-stat-label">Tage Streak 🔥</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="home-section-title">Meine Projekte</p>
+    <div class="projects-grid" id="projects-grid">
+      <!-- rendered by JS -->
     </div>
   </div>
+</main>
 
-  <div class="upload-card">
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- SCREEN: PROJECT INSIDE                                              -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<main class="screen" id="screen-project">
+  <div class="project-inside-wrap">
+    <div class="project-inside-header">
+      <button class="btn-back" id="back-to-home">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Zurück
+      </button>
+      <div class="project-inside-icon" id="proj-icon">📚</div>
+      <div>
+        <div class="project-inside-name" id="proj-name">Projekt</div>
+        <div class="project-inside-sub" id="proj-sub">0 Lernsets</div>
+      </div>
+    </div>
+
+    <div class="project-nav">
+      <button class="project-nav-btn active" data-section="dashboard">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </button>
+      <button class="project-nav-btn" data-section="lernsets">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Lernsets
+      </button>
+      <button class="project-nav-btn" data-section="probe">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Probeprüfung
+      </button>
+      <button class="project-nav-btn" data-section="kiplan">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        KI-Lernplan
+      </button>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div class="project-section active" id="proj-section-dashboard">
+      <div id="proj-dashboard-body"></div>
+    </div>
+
+    <!-- Lernsets Section -->
+    <div class="project-section" id="proj-section-lernsets">
+      <div class="lernset-actions">
+        <button class="btn-new-lernset" id="btn-new-lernset">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Neues Lernset
+        </button>
+      </div>
+      <div class="filter-bar" id="proj-filter-bar"></div>
+      <div class="library-grid" id="proj-library-grid"></div>
+    </div>
+
+    <!-- Probeprüfung Section -->
+    <div class="project-section" id="proj-section-probe">
+      <div class="probe-config">
+        <h3>🧪 Probeprüfung konfigurieren</h3>
+        <p style="color:var(--text2);font-size:.88rem;margin-bottom:1rem">Die KI generiert prüfungsähnliche Fragen aus deinen Lernsets.</p>
+        <div style="margin-bottom:.75rem">
+          <label style="font-size:.82rem;color:var(--text2);display:block;margin-bottom:.35rem">Schwierigkeit</label>
+          <div class="probe-options" id="probe-difficulty">
+            <button class="probe-option active" data-val="mittel">Mittel</button>
+            <button class="probe-option" data-val="einfach">Einfach</button>
+            <button class="probe-option" data-val="schwer">Schwer</button>
+            <button class="probe-option" data-val="prüfung">Prüfungsniveau</button>
+          </div>
+        </div>
+        <div style="margin-bottom:.75rem">
+          <label style="font-size:.82rem;color:var(--text2);display:block;margin-bottom:.35rem">Fragenanzahl</label>
+          <div class="probe-options" id="probe-count">
+            <button class="probe-option" data-val="5">5</button>
+            <button class="probe-option active" data-val="10">10</button>
+            <button class="probe-option" data-val="15">15</button>
+            <button class="probe-option" data-val="20">20</button>
+          </div>
+        </div>
+        <div style="margin-bottom:1rem">
+          <label style="font-size:.82rem;color:var(--text2);display:block;margin-bottom:.35rem">Fragetypen</label>
+          <div class="probe-options" id="probe-types">
+            <button class="probe-option active" data-val="gemischt">Gemischt</button>
+            <button class="probe-option" data-val="mc">Multiple Choice</button>
+            <button class="probe-option" data-val="offen">Offen</button>
+          </div>
+        </div>
+        <button class="btn-start-probe" id="btn-start-probe">🚀 Probeprüfung starten</button>
+      </div>
+      <div id="probe-sets-info" style="color:var(--text2);font-size:.85rem;text-align:center;padding:1rem"></div>
+    </div>
+
+    <!-- KI Lernplan Section -->
+    <div class="project-section" id="proj-section-kiplan">
+      <div class="ki-plan-config">
+        <h3>🤖 KI-Lernplan generieren</h3>
+        <p style="color:var(--text2);font-size:.88rem;margin-bottom:1rem">Die KI erstellt einen personalisierten Lernplan und trägt Termine im Kalender ein.</p>
+        <div class="ki-plan-field">
+          <label>Prüfungsdatum</label>
+          <input type="date" id="ki-plan-exam-date" />
+        </div>
+        <div class="ki-plan-field">
+          <label>Themen / Fächer</label>
+          <input type="text" id="ki-plan-topics" placeholder="z.B. Mathe, Physik, Geschichte…" />
+        </div>
+        <div class="ki-plan-field">
+          <label>Verfügbare Lernzeit pro Tag</label>
+          <select id="ki-plan-hours">
+            <option value="30min">30 Minuten</option>
+            <option value="1h" selected>1 Stunde</option>
+            <option value="2h">2 Stunden</option>
+            <option value="3h">3+ Stunden</option>
+          </select>
+        </div>
+        <div class="ki-plan-field">
+          <label>Aktuelles Niveau (optional)</label>
+          <textarea id="ki-plan-notes" rows="2" placeholder="z.B. Kapitel 1-3 schon gut, Kapitel 4 muss noch geübt werden…"></textarea>
+        </div>
+        <button class="btn-ki-generate" id="btn-ki-generate">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          Lernplan generieren
+        </button>
+      </div>
+      <div id="ki-plan-result-area"></div>
+      <div id="proj-plan-list"></div>
+    </div>
+  </div>
+</main>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- SCREEN: UPLOAD (inside project context)                            -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<main class="screen" id="screen-upload">
+  <div class="screen-topbar">
+    <button class="btn-back" id="back-from-upload">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Zurück
+    </button>
+    <h2 class="topbar-title">Neues Lernset</h2>
+  </div>
+  <div class="upload-card" style="max-width:640px;margin:0 auto">
     <div class="upload-zone" id="upload-zone" role="button" tabindex="0">
       <div class="upload-zone-bg"></div>
       <div class="upload-zone-content">
@@ -167,22 +457,23 @@
           <div class="mode-card-check">✓</div>
         </button>
       </div>
-      <div class="options-row">
-        <div class="option-group">
-          <span class="option-label">Anzahl</span>
-          <div class="option-pills">
-            <button class="opt-pill" data-count="5">5</button>
-            <button class="opt-pill active" data-count="10">10</button>
-            <button class="opt-pill" data-count="15">15</button>
-          </div>
+    </div>
+
+    <div class="options-row">
+      <div class="option-group">
+        <span class="option-label">Anzahl</span>
+        <div class="option-pills">
+          <button class="opt-pill" data-count="5">5</button>
+          <button class="opt-pill active" data-count="10">10</button>
+          <button class="opt-pill" data-count="15">15</button>
         </div>
-        <div class="option-group">
-          <span class="option-label">Sprache</span>
-          <div class="option-pills">
-            <button class="opt-pill active" data-lang="auto">Auto</button>
-            <button class="opt-pill" data-lang="de">DE</button>
-            <button class="opt-pill" data-lang="en">EN</button>
-          </div>
+      </div>
+      <div class="option-group">
+        <span class="option-label">Sprache</span>
+        <div class="option-pills">
+          <button class="opt-pill active" data-lang="auto">Auto</button>
+          <button class="opt-pill" data-lang="de">DE</button>
+          <button class="opt-pill" data-lang="en">EN</button>
         </div>
       </div>
     </div>
@@ -194,7 +485,7 @@
   </div>
 </main>
 
-<!-- LOADING ──────────────────────────────────────────────────────────────── -->
+<!-- LOADING ──────────────────────────────────────────────────────────── -->
 <main class="screen" id="screen-loading">
   <div class="loading-scene">
     <div class="loading-visual">
@@ -211,7 +502,7 @@
   </div>
 </main>
 
-<!-- FLASHCARDS ──────────────────────────────────────────────────────────── -->
+<!-- FLASHCARDS ──────────────────────────────────────────────────────── -->
 <main class="screen" id="screen-flashcards">
   <div class="screen-topbar">
     <button class="btn-back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Zurück</button>
@@ -222,20 +513,19 @@
   <div id="fc-container"></div>
 </main>
 
-<!-- SUMMARY ──────────────────────────────────────────────────────────────── -->
+<!-- SUMMARY ──────────────────────────────────────────────────────────── -->
 <main class="screen" id="screen-summary">
   <div class="screen-topbar">
     <button class="btn-back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Zurück</button>
     <div class="topbar-actions">
       <button class="btn-save btn-pill" data-mode="summary">💾 Speichern</button>
       <button class="btn-pill" id="summary-export">🖨️ Drucken</button>
-      <button class="btn-pill" id="summary-pdf">📄 PDF</button>
     </div>
   </div>
   <div class="summary-wrap"><div class="summary-content" id="summary-content"></div></div>
 </main>
 
-<!-- QUIZ ──────────────────────────────────────────────────────────────────── -->
+<!-- QUIZ ──────────────────────────────────────────────────────────────── -->
 <main class="screen" id="screen-quiz">
   <div class="screen-topbar">
     <button class="btn-back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Zurück</button>
@@ -246,44 +536,92 @@
   <div class="quiz-wrap" id="quiz-body"></div>
 </main>
 
-<!-- DASHBOARD ────────────────────────────────────────────────────────────── -->
-<main class="screen" id="screen-dashboard">
-  <div class="screen-topbar">
-    <button class="btn-back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Zurück</button>
-    <h2 class="topbar-title">Dashboard</h2>
+<!-- KALENDER ─────────────────────────────────────────────────────────── -->
+<main class="screen" id="screen-calendar">
+  <div class="calendar-wrap">
+    <div class="screen-topbar" style="margin-bottom:1.5rem">
+      <button class="btn-back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Zurück</button>
+      <h2 class="topbar-title">Kalender</h2>
+      <button class="btn-pill" id="cal-add-deadline">+ Abgabe</button>
+    </div>
+    <div class="calendar-header">
+      <div class="calendar-nav-btns">
+        <button class="cal-nav-btn" id="cal-prev">‹</button>
+        <button class="cal-nav-btn" id="cal-next">›</button>
+      </div>
+      <div class="calendar-title" id="cal-month-title">Juni 2026</div>
+    </div>
+    <div class="calendar-grid" id="calendar-grid">
+      <div class="cal-day-header">Mo</div>
+      <div class="cal-day-header">Di</div>
+      <div class="cal-day-header">Mi</div>
+      <div class="cal-day-header">Do</div>
+      <div class="cal-day-header">Fr</div>
+      <div class="cal-day-header">Sa</div>
+      <div class="cal-day-header">So</div>
+      <!-- days rendered by JS -->
+    </div>
+    <div class="cal-legend">
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--purple)"></div>Lernplan</div>
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--amber)"></div>Abgaben</div>
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--green)"></div>KI-Termine</div>
+    </div>
   </div>
-  <div id="dashboard-body"></div>
 </main>
 
-<!-- LIBRARY ──────────────────────────────────────────────────────────────── -->
-<main class="screen" id="screen-library">
-  <div class="screen-topbar">
-    <button class="btn-back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Zurück</button>
-    <h2 class="topbar-title">Bibliothek</h2>
-    <button class="btn-pill" id="lib-new">+ Neu</button>
-  </div>
-  <div class="filter-bar" id="library-filter-bar"></div>
-  <div class="library-grid" id="library-grid"></div>
-</main>
+<!-- ── Modals ──────────────────────────────────────────────────────── -->
 
-<!-- PLAN ─────────────────────────────────────────────────────────────────── -->
-<main class="screen" id="screen-plan">
-  <div class="screen-topbar">
-    <button class="btn-back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Zurück</button>
-    <h2 class="topbar-title">Lernplan</h2>
-    <button class="btn-pill" id="plan-add-btn">+ Ziel</button>
+<!-- Neues Projekt Modal -->
+<div class="modal-backdrop" id="project-modal-backdrop">
+  <div class="modal modal-project">
+    <div class="modal-icon">📁</div>
+    <h3 id="project-modal-title">Neues Projekt</h3>
+    <div class="modal-field">
+      <label>Projektname</label>
+      <input type="text" id="proj-modal-name" placeholder="z.B. Mathematik Prüfung" />
+    </div>
+    <div class="modal-field">
+      <label>Farbe</label>
+      <div class="color-picker" id="color-picker">
+        <div class="color-dot selected" data-color="#a78bfa" style="background:#a78bfa"></div>
+        <div class="color-dot" data-color="#38bdf8" style="background:#38bdf8"></div>
+        <div class="color-dot" data-color="#34d399" style="background:#34d399"></div>
+        <div class="color-dot" data-color="#fbbf24" style="background:#fbbf24"></div>
+        <div class="color-dot" data-color="#f87171" style="background:#f87171"></div>
+        <div class="color-dot" data-color="#fb923c" style="background:#fb923c"></div>
+        <div class="color-dot" data-color="#e879f9" style="background:#e879f9"></div>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>Icon</label>
+      <div class="icon-picker" id="icon-picker">
+        <button class="icon-btn selected" data-icon="📚">📚</button>
+        <button class="icon-btn" data-icon="🧮">🧮</button>
+        <button class="icon-btn" data-icon="🔬">🔬</button>
+        <button class="icon-btn" data-icon="📖">📖</button>
+        <button class="icon-btn" data-icon="🌍">🌍</button>
+        <button class="icon-btn" data-icon="💻">💻</button>
+        <button class="icon-btn" data-icon="🎨">🎨</button>
+        <button class="icon-btn" data-icon="🎵">🎵</button>
+        <button class="icon-btn" data-icon="⚽">⚽</button>
+        <button class="icon-btn" data-icon="🏛️">🏛️</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" id="proj-modal-cancel">Abbrechen</button>
+      <button class="btn-modal-confirm" id="proj-modal-confirm">Erstellen</button>
+    </div>
   </div>
-  <div class="plan-body" id="plan-body"></div>
-</main>
+</div>
 
-<!-- ── Modals ──────────────────────────────────────────────────────────── -->
+<!-- Save Lernset Modal -->
 <div class="modal-backdrop" id="save-backdrop">
   <div class="modal">
     <div class="modal-icon">💾</div>
     <h3 id="modal-save-title">Lernset speichern</h3>
-    <p id="modal-save-desc">Wird lokal in deinem Browser gespeichert.</p>
-    <div class="modal-field"><label>Titel</label><input type="text" id="save-title" placeholder="z. B. Biologie Kapitel 3" /></div>
-    <div class="modal-field"><label>Fach</label><input type="text" id="save-subject" placeholder="z. B. Biologie" list="subject-list" /><datalist id="subject-list"></datalist></div>
+    <p id="modal-save-desc">Wird im Projekt gespeichert.</p>
+    <div class="modal-field"><label>Titel</label><input type="text" id="save-title" placeholder="z.B. Biologie Kapitel 3" /></div>
+    <div class="modal-field"><label>Fach</label><input type="text" id="save-subject" placeholder="z.B. Biologie" list="subject-list" /><datalist id="subject-list"></datalist></div>
     <div class="modal-actions">
       <button class="btn-modal-cancel" id="save-cancel">Abbrechen</button>
       <button class="btn-modal-confirm" id="save-confirm">Speichern</button>
@@ -291,15 +629,24 @@
   </div>
 </div>
 
-<div class="modal-backdrop" id="plan-backdrop">
-  <div class="modal">
+<!-- Abgabe/Deadline Modal -->
+<div class="modal-backdrop" id="deadline-modal-backdrop">
+  <div class="modal modal-deadline">
     <div class="modal-icon">📅</div>
-    <h3>Lernziel hinzufügen</h3>
-    <div class="modal-field"><label>Ziel</label><input type="text" id="plan-title" placeholder="z. B. Vokabeln Kapitel 5" /></div>
-    <div class="modal-field"><label>Fällig bis</label><input type="date" id="plan-date" /></div>
+    <h3>Abgabe / Termin</h3>
+    <div class="modal-field"><label>Titel</label><input type="text" id="deadline-title" placeholder="z.B. Mathe Abgabe" /></div>
+    <div class="modal-field"><label>Datum</label><input type="date" id="deadline-date" /></div>
+    <div class="modal-field">
+      <label>Typ</label>
+      <select id="deadline-type" style="width:100%;background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:.6rem .9rem;color:var(--text1);font-size:.9rem;">
+        <option value="deadline">Abgabe</option>
+        <option value="exam">Prüfung</option>
+        <option value="plan">Lernziel</option>
+      </select>
+    </div>
     <div class="modal-actions">
-      <button class="btn-modal-cancel" id="plan-cancel">Abbrechen</button>
-      <button class="btn-modal-confirm" id="plan-confirm">Hinzufügen</button>
+      <button class="btn-modal-cancel" id="deadline-cancel">Abbrechen</button>
+      <button class="btn-modal-confirm" id="deadline-confirm">Hinzufügen</button>
     </div>
   </div>
 </div>
@@ -323,6 +670,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="app.js"></script>
-<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});</script>
+<script>
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
 </body>
 </html>
