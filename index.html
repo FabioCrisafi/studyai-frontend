@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>StudyAI</title>
 <link rel="manifest" href="manifest.json"/>
-<meta name="theme-color" content="#0f0f13"/>
+<meta name="theme-color" content="#6366f1"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="StudyAI"/>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
 <link rel="stylesheet" href="style.css"/>
@@ -15,90 +18,44 @@
 <div class="bg-orb orb1"></div>
 <div class="bg-orb orb2"></div>
 
-<!-- ── AUTH SCREEN ─────────────────────────────────────────────────────────── -->
+<!-- AUTH -->
 <div id="auth-screen" class="auth-screen">
   <div class="auth-card">
-    <div class="auth-logo">
-      <span class="auth-logo-icon">⚡</span>
-      <span class="auth-logo-text">StudyAI</span>
-    </div>
+    <div class="auth-logo"><span class="auth-logo-icon">⚡</span><span class="auth-logo-text">StudyAI</span></div>
     <p class="auth-subtitle">Dein KI-gestützter Lernassistent</p>
-
     <div class="auth-tabs">
       <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Anmelden</button>
       <button class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Registrieren</button>
     </div>
-
     <div id="auth-login-form">
-      <div class="auth-field">
-        <label>E-Mail</label>
-        <input type="email" id="login-email" placeholder="deine@email.ch" autocomplete="email"/>
-      </div>
-      <div class="auth-field">
-        <label>Passwort</label>
-        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"/>
-      </div>
-      <button class="auth-btn" onclick="doLogin()">
-        <span id="login-btn-text">Anmelden</span>
-      </button>
+      <div class="auth-field"><label>E-Mail</label><input type="email" id="login-email" placeholder="deine@email.ch" autocomplete="email"/></div>
+      <div class="auth-field"><label>Passwort</label><input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"/></div>
+      <button class="auth-btn" onclick="doLogin()"><span id="login-btn-text">Anmelden</span></button>
     </div>
-
     <div id="auth-signup-form" style="display:none">
-      <div class="auth-field">
-        <label>Name</label>
-        <input type="text" id="signup-name" placeholder="Max Muster"/>
-      </div>
-      <div class="auth-field">
-        <label>E-Mail</label>
-        <input type="email" id="signup-email" placeholder="deine@email.ch" autocomplete="email"/>
-      </div>
-      <div class="auth-field">
-        <label>Passwort</label>
-        <input type="password" id="signup-password" placeholder="Mind. 6 Zeichen" autocomplete="new-password"/>
-      </div>
-      <button class="auth-btn" onclick="doSignup()">
-        <span id="signup-btn-text">Konto erstellen</span>
-      </button>
+      <div class="auth-field"><label>Name</label><input type="text" id="signup-name" placeholder="Max Muster"/></div>
+      <div class="auth-field"><label>E-Mail</label><input type="email" id="signup-email" placeholder="deine@email.ch" autocomplete="email"/></div>
+      <div class="auth-field"><label>Passwort</label><input type="password" id="signup-password" placeholder="Mind. 6 Zeichen" autocomplete="new-password"/></div>
+      <button class="auth-btn" onclick="doSignup()"><span id="signup-btn-text">Konto erstellen</span></button>
     </div>
-
     <div id="auth-error" class="auth-error" style="display:none"></div>
     <div id="auth-success" class="auth-success" style="display:none"></div>
   </div>
 </div>
 
-<!-- ── MAIN APP ────────────────────────────────────────────────────────────── -->
+<!-- APP -->
 <div id="app" style="display:none">
-
-  <!-- Header -->
   <header class="header">
-    <div class="header-left">
-      <span class="logo-icon">⚡</span>
-      <span class="logo-text">StudyAI</span>
+    <div class="header-left" onclick="showMain('home')" style="cursor:pointer">
+      <span class="logo-icon">⚡</span><span class="logo-text">StudyAI</span>
     </div>
     <nav class="header-nav">
-      <button class="nav-btn" id="nav-dashboard" onclick="showScreen('dashboard')" title="Dashboard">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        <span>Dashboard</span>
-      </button>
-      <button class="nav-btn" id="nav-upload" onclick="showScreen('upload')" title="Hochladen">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        <span>Hochladen</span>
-      </button>
-      <button class="nav-btn" id="nav-library" onclick="showScreen('library')" title="Bibliothek">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        <span>Bibliothek</span>
-      </button>
-      <button class="nav-btn" id="nav-plan" onclick="showScreen('plan')" title="Lernplan">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span>Lernplan</span>
-      </button>
-      <button class="nav-btn" id="nav-timer" onclick="toggleTimer()" title="Timer">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <span>Timer</span>
-      </button>
+      <button class="nav-btn active" onclick="showMain('home')">🏠 <span>Home</span></button>
+      <button class="nav-btn" onclick="showMain('calendar')">📅 <span>Kalender</span></button>
+      <button class="nav-btn" onclick="toggleTimer()">⏱️ <span>Timer</span></button>
     </nav>
     <div class="header-right">
-      <div class="streak-badge" id="streak-badge">🔥 <span id="streak-count">0</span></div>
+      <div class="streak-badge">🔥 <span id="streak-count">0</span></div>
       <div class="user-menu" onclick="toggleUserMenu()">
         <div class="user-avatar" id="user-avatar">?</div>
         <div class="user-dropdown" id="user-dropdown" style="display:none">
@@ -106,62 +63,88 @@
           <div class="user-dropdown-email" id="user-dropdown-email">–</div>
           <hr/>
           <button onclick="toggleTheme()">🌙 Theme wechseln</button>
+          <button onclick="installPWA()" id="install-btn" style="display:none">📲 App installieren</button>
           <button onclick="doLogout()">🚪 Abmelden</button>
         </div>
       </div>
     </div>
   </header>
 
-  <!-- ── DASHBOARD ──────────────────────────────────────────────────────────── -->
-  <div id="screen-dashboard" class="screen" style="display:none">
-    <div class="screen-topbar"><h2>Dashboard</h2></div>
-    <div class="dashboard-grid">
-      <div class="dash-card dash-welcome">
-        <div class="dash-welcome-text">
-          <h3 id="dash-greeting">Hallo! 👋</h3>
-          <p id="dash-subtitle">Bereit zum Lernen?</p>
+  <!-- HOME -->
+  <div id="screen-home" class="screen">
+    <div class="home-hero">
+      <div><h1 id="home-greeting">Hallo! 👋</h1><p class="home-sub" id="home-sub">Was lernst du heute?</p></div>
+      <button class="btn-primary btn-lg" onclick="openNewProjectModal()">+ Neues Projekt</button>
+    </div>
+    <div class="home-stats-row">
+      <div class="home-stat"><div class="home-stat-n" id="hs-projects">0</div><div class="home-stat-l">Projekte</div></div>
+      <div class="home-stat"><div class="home-stat-n" id="hs-sets">0</div><div class="home-stat-l">Lernsets</div></div>
+      <div class="home-stat"><div class="home-stat-n" id="hs-streak">0</div><div class="home-stat-l">Tage Streak</div></div>
+      <div class="home-stat"><div class="home-stat-n" id="hs-score">–</div><div class="home-stat-l">Ø Score</div></div>
+    </div>
+    <h2 class="section-title">Deine Projekte</h2>
+    <div id="projects-loading" class="loading-hint" style="display:none">Lade Projekte...</div>
+    <div id="projects-empty" class="empty-hint" style="display:none">Noch kein Projekt. Erstelle deins!</div>
+    <div class="projects-grid" id="projects-grid"></div>
+  </div>
+
+  <!-- PROJEKT DETAIL -->
+  <div id="screen-project" class="screen" style="display:none">
+    <div class="project-header">
+      <button class="btn-ghost" onclick="showMain('home')">← Zurück</button>
+      <div class="project-header-info">
+        <span id="proj-icon" class="proj-icon-big">📁</span>
+        <div>
+          <h2 id="proj-name">Projekt</h2>
+          <div class="proj-progress-bar-wrap"><div class="proj-progress-bar"><div id="proj-progress-fill" class="proj-progress-fill"></div></div><span id="proj-progress-pct" class="proj-progress-pct">0%</span></div>
         </div>
-        <button class="btn-primary" onclick="showScreen('upload')">+ Neues Set</button>
       </div>
-      <div class="dash-card">
-        <div class="dash-stat-label">Lernsets</div>
-        <div class="dash-stat-num" id="stat-sets">0</div>
+      <button class="btn-ghost btn-danger" onclick="deleteCurrentProject()">🗑️</button>
+    </div>
+    <div class="proj-tabs">
+      <button class="proj-tab active" onclick="switchProjTab('sets')" id="ptab-sets">📚 Lernsets</button>
+      <button class="proj-tab" onclick="switchProjTab('plan')" id="ptab-plan">📅 Lernplan</button>
+      <button class="proj-tab" onclick="switchProjTab('exam')" id="ptab-exam">🎯 Probeprüfung</button>
+    </div>
+    <!-- Lernsets -->
+    <div id="proj-tab-sets">
+      <div class="proj-tab-toolbar"><button class="btn-primary" onclick="showUploadForProject()">+ Neues Lernset</button></div>
+      <div id="proj-sets-empty" class="empty-hint" style="display:none">Noch keine Lernsets.</div>
+      <div class="library-grid" id="proj-sets-grid"></div>
+    </div>
+    <!-- Lernplan -->
+    <div id="proj-tab-plan" style="display:none">
+      <div class="proj-tab-toolbar">
+        <button class="btn-primary" onclick="openAiPlanModal()">✨ KI-Lernplan</button>
+        <button class="btn-ghost" onclick="openAddPlanModal()">+ Manuell</button>
       </div>
-      <div class="dash-card">
-        <div class="dash-stat-label">Quiz absolviert</div>
-        <div class="dash-stat-num" id="stat-quizzes">0</div>
+      <div id="proj-plan-list"></div>
+    </div>
+    <!-- Probeprüfung -->
+    <div id="proj-tab-exam" style="display:none">
+      <div class="exam-setup-card" id="exam-setup">
+        <h3>🎯 Probeprüfung</h3>
+        <p class="exam-desc">Wähle Lernsets aus und starte eine Probeprüfung mit gemischten Fragen.</p>
+        <div id="exam-sets-select" class="exam-sets-select"></div>
+        <div class="exam-options"><label>Anzahl Fragen:</label><select id="exam-q-count"><option value="10">10 Fragen</option><option value="20">20 Fragen</option><option value="30">30 Fragen</option><option value="all">Alle</option></select></div>
+        <button class="btn-primary btn-lg" onclick="startExam()">Probeprüfung starten →</button>
       </div>
-      <div class="dash-card">
-        <div class="dash-stat-label">Ø Score</div>
-        <div class="dash-stat-num" id="stat-score">–</div>
-      </div>
-      <div class="dash-card dash-heatmap-card">
-        <div class="dash-card-title">Lernaktivität</div>
-        <div id="activity-heatmap" class="heatmap"></div>
-      </div>
-      <div class="dash-card dash-recent-card">
-        <div class="dash-card-title">Letzte Sets</div>
-        <div id="recent-sets-list"></div>
-      </div>
+      <div id="exam-play" style="display:none"></div>
+      <div id="exam-result" style="display:none"></div>
     </div>
   </div>
 
-  <!-- ── UPLOAD ─────────────────────────────────────────────────────────────── -->
+  <!-- UPLOAD -->
   <div id="screen-upload" class="screen" style="display:none">
-    <div class="screen-topbar"><h2>Neues Lernset</h2></div>
+    <div class="screen-topbar"><button class="btn-ghost" onclick="backFromUpload()">← Zurück</button><h2>Neues Lernset</h2></div>
     <div class="upload-area" id="upload-area">
       <div class="upload-icon">📄</div>
       <p class="upload-title">Dokument hochladen</p>
-      <p class="upload-sub">PDF, Word, Bild oder Text</p>
+      <p class="upload-sub">PDF, Word, Bild oder Text · Drag & Drop</p>
       <input type="file" id="file-input" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.webp" style="display:none" onchange="handleFile(this.files[0])"/>
       <button class="btn-primary" onclick="document.getElementById('file-input').click()">Datei wählen</button>
     </div>
-    <div id="file-preview" style="display:none">
-      <div class="file-preview-box">
-        <span id="file-preview-name"></span>
-        <button class="btn-ghost" onclick="resetUpload()">✕</button>
-      </div>
-    </div>
+    <div id="file-preview" style="display:none"><div class="file-preview-box"><span id="file-preview-name"></span><button class="btn-ghost" onclick="resetUpload()">✕</button></div></div>
     <div class="upload-options" id="upload-options" style="display:none">
       <div class="upload-option-label">Was soll erstellt werden?</div>
       <div class="mode-buttons">
@@ -170,23 +153,16 @@
         <button class="mode-btn" id="mode-summary" onclick="setMode('summary')">📝 Zusammenfassung</button>
         <button class="mode-btn" id="mode-quiz" onclick="setMode('quiz')">❓ Quiz</button>
       </div>
-      <div class="upload-title-row">
-        <input type="text" id="set-title-input" placeholder="Titel des Lernsets..." class="title-input"/>
-      </div>
-      <button class="btn-primary btn-analyze" id="analyze-btn" onclick="analyzeDocument()">
-        <span id="analyze-btn-text">✨ Analysieren</span>
-      </button>
+      <input type="text" id="set-title-input" placeholder="Titel des Lernsets..." class="title-input"/>
+      <button class="btn-primary btn-analyze" id="analyze-btn" onclick="analyzeDocument()">✨ Analysieren</button>
     </div>
-    <div id="loading-overlay" style="display:none">
-      <div class="loading-spinner"></div>
-      <p id="loading-text">Analysiere Dokument...</p>
-    </div>
+    <div id="loading-overlay" style="display:none"><div class="loading-spinner"></div><p id="loading-text">Analysiere...</p></div>
   </div>
 
-  <!-- ── RESULT ─────────────────────────────────────────────────────────────── -->
+  <!-- RESULT -->
   <div id="screen-result" class="screen" style="display:none">
     <div class="screen-topbar">
-      <button class="btn-ghost" onclick="showScreen('upload')">← Zurück</button>
+      <button class="btn-ghost" onclick="backFromResult()">← Zurück</button>
       <h2 id="result-title">Ergebnis</h2>
       <button class="btn-primary" id="save-btn" onclick="saveSet()">💾 Speichern</button>
     </div>
@@ -195,105 +171,43 @@
       <button class="result-tab" id="rtab-summary" onclick="switchResultTab('summary')">📝 Zusammenfassung</button>
       <button class="result-tab" id="rtab-quiz" onclick="switchResultTab('quiz')">❓ Quiz</button>
     </div>
-
-    <!-- Flashcards -->
     <div id="result-flash">
-      <div class="fc-progress-row">
-        <span id="fc-counter">1 / 1</span>
-        <div class="fc-progress-bar"><div id="fc-progress-fill" class="fc-progress-fill"></div></div>
+      <div class="fc-progress-row"><span id="fc-counter">1/1</span><div class="fc-progress-bar"><div id="fc-progress-fill" class="fc-progress-fill"></div></div></div>
+      <div class="flashcard-wrap"><div class="flashcard" id="fc-card" onclick="flipCard()"><div class="fc-face fc-front"><div class="fc-content" id="fc-front-text"></div></div><div class="fc-face fc-back"><div class="fc-content" id="fc-back-text"></div></div></div></div>
+      <div class="fc-flip-hint">Klicken zum Umdrehen · Leertaste · ← →</div>
+      <div class="fc-actions">
+        <button class="fc-btn" onclick="fcNav(-1)">← Zurück</button>
+        <div class="fc-difficulty"><button class="diff-btn" onclick="setDifficulty('easy')">😊 Leicht</button><button class="diff-btn" onclick="setDifficulty('medium')">🤔 Mittel</button><button class="diff-btn" onclick="setDifficulty('hard')">😰 Schwer</button></div>
+        <button class="fc-btn" onclick="fcNav(1)">Weiter →</button>
       </div>
-      <div class="flashcard-wrap" id="fc-wrap">
-        <div class="flashcard" id="fc-card" onclick="flipCard()">
-          <div class="fc-face fc-front"><div class="fc-content" id="fc-front-text"></div></div>
-          <div class="fc-face fc-back"><div class="fc-content" id="fc-back-text"></div></div>
-        </div>
-      </div>
-      <div class="fc-flip-hint" id="fc-flip-hint">Klicken zum Umdrehen</div>
-      <div class="fc-actions" id="fc-actions">
-        <button class="fc-btn fc-btn-wrong" onclick="fcNav(-1)">← Zurück</button>
-        <div class="fc-difficulty">
-          <button class="diff-btn diff-easy" onclick="setDifficulty('easy')">😊 Leicht</button>
-          <button class="diff-btn diff-medium" onclick="setDifficulty('medium')">🤔 Mittel</button>
-          <button class="diff-btn diff-hard" onclick="setDifficulty('hard')">😰 Schwer</button>
-        </div>
-        <button class="fc-btn fc-btn-right" onclick="fcNav(1)">Weiter →</button>
-      </div>
-      <div class="fc-extra-actions">
-        <button class="btn-ghost" onclick="repeatHard()">🔁 Schwierige wiederholen</button>
-        <span id="fc-diff-badge" class="diff-badge"></span>
-      </div>
+      <div class="fc-extra-actions"><button class="btn-ghost" onclick="repeatHard()">🔁 Schwierige wiederholen</button><span id="fc-diff-badge" class="diff-badge"></span></div>
     </div>
-
-    <!-- Summary -->
-    <div id="result-summary" style="display:none">
-      <div class="summary-wrap" id="summary-content"></div>
-    </div>
-
-    <!-- Quiz -->
+    <div id="result-summary" style="display:none"><div class="summary-wrap" id="summary-content"></div></div>
     <div id="result-quiz" style="display:none">
-      <div id="quiz-start-screen">
-        <div class="quiz-start-card">
-          <h3>Quiz starten</h3>
-          <p id="quiz-start-info"></p>
-          <button class="btn-primary" onclick="startQuiz()">Quiz starten →</button>
-        </div>
-      </div>
+      <div id="quiz-start-screen"><div class="quiz-start-card"><h3>Quiz starten</h3><p id="quiz-start-info"></p><button class="btn-primary" onclick="startQuiz()">Quiz starten →</button></div></div>
       <div id="quiz-play-screen" style="display:none">
-        <div class="quiz-q-meta">
-          <div class="quiz-q-num" id="quiz-q-num">Frage 1/10</div>
-          <div class="quiz-q-type-badge" id="quiz-q-type"></div>
-        </div>
+        <div class="quiz-q-meta"><div class="quiz-q-num" id="quiz-q-num">Frage 1/10</div><div class="quiz-q-type-badge" id="quiz-q-type"></div></div>
         <div class="quiz-progress-bar"><div id="quiz-progress-fill" class="quiz-progress-fill"></div></div>
         <div class="quiz-question-card">
           <p class="quiz-question-text" id="quiz-question-text"></p>
           <div id="quiz-options-wrap"></div>
-          <div id="quiz-freetext-wrap" style="display:none">
-            <textarea id="quiz-freetext-input" placeholder="Deine Antwort..." rows="3"></textarea>
-            <button class="btn-primary" onclick="submitFreetext()">Antwort prüfen</button>
-          </div>
-          <div id="quiz-feedback" style="display:none">
-            <div id="quiz-feedback-text"></div>
-            <button class="btn-ghost" id="quiz-explain-btn" onclick="explainAnswer()">💡 Erklärung</button>
-            <div id="quiz-explanation" style="display:none"></div>
-          </div>
+          <div id="quiz-freetext-wrap" style="display:none"><textarea id="quiz-freetext-input" placeholder="Deine Antwort..." rows="3"></textarea><button class="btn-primary" onclick="submitFreetext()">Antwort prüfen</button></div>
+          <div id="quiz-feedback" style="display:none"><div id="quiz-feedback-text"></div><button class="btn-ghost" id="quiz-explain-btn" onclick="explainAnswer()">💡 Erklärung</button><div id="quiz-explanation" style="display:none"></div></div>
         </div>
         <button class="btn-primary quiz-next-btn" id="quiz-next-btn" style="display:none" onclick="nextQuestion()">Weiter →</button>
       </div>
       <div id="quiz-result-screen" style="display:none">
-        <div class="quiz-result-card">
-          <div class="quiz-result-score" id="quiz-result-score"></div>
-          <p id="quiz-result-text"></p>
-          <div id="quiz-weakness-wrap" style="display:none">
-            <div class="quiz-weakness-title">📊 Schwächenanalyse</div>
-            <div id="quiz-weakness-text"></div>
-          </div>
-          <div class="quiz-result-actions">
-            <button class="btn-ghost" onclick="restartQuiz()">🔁 Wiederholen</button>
-            <button class="btn-primary" onclick="showScreen('library')">📚 Zur Bibliothek</button>
-          </div>
-        </div>
+        <div class="quiz-result-card"><div class="quiz-result-score" id="quiz-result-score"></div><p id="quiz-result-text"></p><div id="quiz-weakness-wrap" style="display:none"><div class="quiz-weakness-title">📊 Schwächenanalyse</div><div id="quiz-weakness-text"></div></div><div class="quiz-result-actions"><button class="btn-ghost" onclick="restartQuiz()">🔁 Wiederholen</button><button class="btn-primary" onclick="backFromResult()">← Zurück</button></div></div>
       </div>
     </div>
   </div>
 
-  <!-- ── LIBRARY ─────────────────────────────────────────────────────────────── -->
-  <div id="screen-library" class="screen" style="display:none">
-    <div class="screen-topbar"><h2>Bibliothek</h2></div>
-    <div class="library-toolbar">
-      <input type="text" id="lib-search" placeholder="Suchen..." oninput="filterLibrary()" class="lib-search-input"/>
-      <div class="subject-filters" id="subject-filters"></div>
-    </div>
-    <div id="library-loading" class="loading-hint" style="display:none">Lade Sets...</div>
-    <div id="library-empty" class="empty-hint" style="display:none">Noch keine Sets gespeichert. Lade ein Dokument hoch!</div>
-    <div class="library-grid" id="library-grid"></div>
-  </div>
-
-  <!-- ── STUDYSET VIEW ──────────────────────────────────────────────────────── -->
+  <!-- STUDYSET VIEW -->
   <div id="screen-studyset" class="screen" style="display:none">
     <div class="screen-topbar">
-      <button class="btn-ghost" onclick="showScreen('library')">← Zurück</button>
+      <button class="btn-ghost" onclick="backToProject()">← Zurück</button>
       <h2 id="studyset-title">Set</h2>
-      <button class="btn-ghost btn-danger" onclick="deleteCurrentSet()">🗑️ Löschen</button>
+      <button class="btn-ghost btn-danger" onclick="deleteCurrentSet()">🗑️</button>
     </div>
     <div class="result-tabs">
       <button class="result-tab active" id="sstab-flash" onclick="switchSSTab('flash')">🃏 Karteikarten</button>
@@ -305,27 +219,24 @@
     <div id="ss-quiz" style="display:none"></div>
   </div>
 
-  <!-- ── LERNPLAN ───────────────────────────────────────────────────────────── -->
-  <div id="screen-plan" class="screen" style="display:none">
-    <div class="screen-topbar">
-      <h2>Lernplan</h2>
-      <button class="btn-primary" onclick="openAddPlanModal()">+ Ziel hinzufügen</button>
+  <!-- KALENDER -->
+  <div id="screen-calendar" class="screen" style="display:none">
+    <div class="screen-topbar"><h2>📅 Kalender</h2></div>
+    <div class="cal-header">
+      <button class="btn-ghost" onclick="calNav(-1)">←</button>
+      <h3 id="cal-month-label"></h3>
+      <button class="btn-ghost" onclick="calNav(1)">→</button>
     </div>
-    <div id="plan-loading" class="loading-hint" style="display:none">Lade Lernplan...</div>
-    <div id="plan-list"></div>
+    <div class="cal-day-names"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
+    <div class="cal-days" id="cal-grid"></div>
+    <div class="cal-upcoming"><h3 class="section-title">Kommende Termine</h3><div id="cal-upcoming-list"></div></div>
   </div>
 
-  <!-- POMODORO TIMER -->
+  <!-- TIMER -->
   <div class="timer-panel" id="timer-panel" style="display:none">
-    <div class="timer-header">
-      <span id="timer-mode-label">🍅 Pomodoro</span>
-      <button class="btn-ghost timer-close" onclick="toggleTimer()">✕</button>
-    </div>
+    <div class="timer-header"><span id="timer-mode-label">🍅 Pomodoro</span><button class="btn-ghost" onclick="toggleTimer()">✕</button></div>
     <div class="timer-ring-wrap">
-      <svg class="timer-ring" viewBox="0 0 120 120">
-        <circle class="timer-ring-bg" cx="60" cy="60" r="54"/>
-        <circle class="timer-ring-fill" id="timer-ring-fill" cx="60" cy="60" r="54"/>
-      </svg>
+      <svg class="timer-ring" viewBox="0 0 120 120"><circle class="timer-ring-bg" cx="60" cy="60" r="54"/><circle class="timer-ring-fill" id="timer-ring-fill" cx="60" cy="60" r="54"/></svg>
       <div class="timer-display" id="timer-display">25:00</div>
     </div>
     <div class="timer-modes">
@@ -339,11 +250,16 @@
     </div>
   </div>
 
-  <!-- MODALS -->
+  <!-- MODAL -->
   <div id="modal-overlay" class="modal-overlay" style="display:none" onclick="closeModal()">
-    <div class="modal-card" onclick="event.stopPropagation()">
-      <div id="modal-content"></div>
-    </div>
+    <div class="modal-card" onclick="event.stopPropagation()"><div id="modal-content"></div></div>
+  </div>
+
+  <!-- SET PREVIEW TOOLTIP -->
+  <div id="set-preview" class="set-preview" style="display:none">
+    <div class="set-preview-title" id="sp-title"></div>
+    <div class="set-preview-cards" id="sp-cards"></div>
+    <div class="set-preview-footer" id="sp-footer"></div>
   </div>
 
   <div id="toast" class="toast"></div>
