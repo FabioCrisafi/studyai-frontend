@@ -286,3 +286,25 @@ html,body{height:100%;font-family:var(--font-body);background:var(--bg1);color:v
 
 /* PLAN EDIT BTN */
 .plan-edit-btn{color:var(--text2);}
+
+/* DATEI HUB */
+.file-hub-upload{border:2px dashed var(--border2);border-radius:16px;padding:2rem;text-align:center;margin-bottom:1.25rem;transition:.2s;}
+.file-hub-upload:hover,.file-hub-upload.drag-over{border-color:var(--accent);background:rgba(99,102,241,.05);}
+.hub-files-list{margin-bottom:1rem;}
+.hub-files-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem;}
+.hub-file-card{background:var(--bg2);border:1px solid var(--border1);border-radius:10px;padding:.85rem 1rem;display:flex;align-items:center;gap:.75rem;}
+.hub-file-icon{font-size:1.5rem;flex-shrink:0;}
+.hub-file-name{flex:1;font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hub-actions{display:flex;gap:.75rem;margin-top:.5rem;flex-wrap:wrap;}
+.hub-file-select{display:flex;flex-direction:column;gap:.4rem;max-height:200px;overflow-y:auto;}
+
+/* PROJEKT FORTSCHRITT */
+.proj-progress-bar-wrap{display:flex;align-items:center;gap:.5rem;margin-top:.35rem;}
+.proj-progress-bar{flex:1;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;max-width:200px;}
+.proj-progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--accent));border-radius:3px;transition:width .5s ease;}
+.proj-progress-pct{font-size:.8rem;color:var(--text2);white-space:nowrap;}
+
+/* QUIZ FIX – pointer events */
+.quiz-question-card{position:relative;z-index:1;}
+.quiz-option-btn{position:relative;z-index:2;cursor:pointer;}
+#quiz-options-wrap{position:relative;z-index:2;}
