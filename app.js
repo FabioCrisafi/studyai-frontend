@@ -432,7 +432,7 @@ Kein Text ausserhalb des JSON!`;
     let items=JSON.parse(res.match(/\[[\s\S]*\]/)[0]);
     // Sicherheit: nur erlaubte Daten durchlassen
     items=items.filter(it=>allowedDates.includes(it.date));
-    for(const item of items)await dbInsert('study_plan',{user_id:currentUser.id,title:item.title,date:item.date,done:false});
+    for(const item of items)await dbInsert('study_plan',{user_id:currentUser.id,title:item.title,date:item.date,done:false,project_id:currentProject.id});
     await loadProjectPlan();
     showToast(`${items.length} Lerntermine erstellt ✓`);
     switchProjTab('plan');
@@ -773,7 +773,7 @@ async function savePlanEdit(id){
 async function addPlanItem(){
   const title=$('plan-title-input').value.trim(),date=$('plan-date-input').value;
   if(!title||!date)return showToast('Bitte Titel und Datum angeben','error');
-  await dbInsert('study_plan',{user_id:currentUser.id,title,date,done:false});
+  await dbInsert('study_plan',{user_id:currentUser.id,title,date,done:false,project_id:currentProject?.id||null});
   closeModal();await loadProjectPlan();showToast('Lernziel hinzugefügt ✓');
 }
 async function togglePlanItem(id,done){
@@ -814,7 +814,7 @@ async function generateAiPlan(){
     const res=await callBackend(`Du bist ein Lernplaner für die Prüfung am ${examDate}. ${hours}h pro Lerntag.\nThema: ${topic}.\n\nWICHTIG: Verwende NUR diese exakten Daten (keine anderen!):\n${allowedDates.join(', ')}\n\nVerteile den Stoff sinnvoll, plane Wiederholungen.\nNUR JSON:\n[{"date":"YYYY-MM-DD","title":"Aufgabe"}]`);
     let items=JSON.parse(res.match(/\[[\s\S]*\]/)[0]);
     items=items.filter(it=>allowedDates.includes(it.date));
-    for(const item of items)await dbInsert('study_plan',{user_id:currentUser.id,title:item.title,date:item.date,done:false});
+    for(const item of items)await dbInsert('study_plan',{user_id:currentUser.id,title:item.title,date:item.date,done:false,project_id:currentProject.id});
     await loadProjectPlan();showToast(`${items.length} Termine erstellt ✓`);
   }catch{showToast('Fehler beim Erstellen','error');}
 }
@@ -924,7 +924,8 @@ function openDayModal(dateStr){
       ${items.length?items.map(it=>`
         <div class="plan-item ${it.done?'plan-done':''}">
           <input type="checkbox" ${it.done?'checked':''} onchange="togglePlanItemCal('${it.id}',this.checked)"/>
-          <span class="${it.set_id?'plan-item-link':''}" onclick="${it.set_id?`openSetGlobal('${it.set_id}')`:''}">${it.title}</span>
+          <span style="flex:1">${it.title}</span>
+          <button class="btn-primary btn-sm" onclick="openStudyMaterial('${it.id}')">📖 Lernen</button>
           <button class="btn-ghost btn-sm" onclick="editCalItem('${it.id}','${it.title.replace(/'/g,"\\'")}','${it.date}')">✏️</button>
           <button class="btn-ghost btn-sm btn-danger" onclick="deleteCalItem('${it.id}','${dateStr}')">✕</button>
         </div>`).join(''):'<p class="empty-hint-small">Keine Termine an diesem Tag.</p>'}
@@ -935,6 +936,57 @@ function openDayModal(dateStr){
       <button class="btn-ghost" onclick="closeModal()">Schliessen</button>
     </div>`;
   $('modal-overlay').style.display='flex';
+}
+
+// Lernstoff für einen Termin bereitstellen
+async function openStudyMaterial(planId){
+  const item=calPlanCache.find(p=>p.id===planId)||planItems.find(p=>p.id===planId);
+  if(!item)return;
+  // Sets aus dem zugehörigen Projekt holen (oder alle Sets des Users)
+  let sets=[];
+  if(item.project_id) sets=await dbGet('learning_sets',`project_id=eq.${item.project_id}&order=updated_at.desc`)||[];
+  else sets=await dbGet('learning_sets',`user_id=eq.${currentUser.id}&order=updated_at.desc`)||[];
+
+  $('modal-content').innerHTML=`
+    <h3 style="margin-bottom:.35rem">📖 Lernstoff</h3>
+    <p style="color:var(--text2);margin-bottom:1rem">${item.title}</p>
+    ${item.set_id?`<button class="btn-primary" style="width:100%;margin-bottom:.75rem" onclick="openSetGlobal('${item.set_id}')">▶ Verknüpftes Lernset öffnen</button>`:''}
+    <div class="study-mat-section">
+      <div class="study-mat-label">Vorhandene Lernsets</div>
+      ${sets.length?sets.map(s=>`<button class="study-mat-set" onclick="openSetGlobal('${s.id}')">📚 ${s.title} <span>${s.flashcards?.length||0} Karten · ${s.quiz?.length||0} Fragen</span></button>`).join(''):'<p class="empty-hint-small">Noch keine Lernsets vorhanden</p>'}
+    </div>
+    <div class="study-mat-section">
+      <div class="study-mat-label">Neu erstellen</div>
+      <button class="btn-ghost" style="width:100%;margin-bottom:.5rem" onclick="generateLernblatt('${planId}')">📄 Lernblatt erstellen</button>
+    </div>
+    <button class="btn-ghost" style="width:100%" onclick="closeModal()">Schliessen</button>`;
+  $('modal-overlay').style.display='flex';
+}
+
+// Lernblatt (Zusammenfassung) für ein Thema erstellen
+async function generateLernblatt(planId){
+  const item=calPlanCache.find(p=>p.id===planId)||planItems.find(p=>p.id===planId);
+  if(!item)return;
+  $('modal-content').innerHTML=`<h3 style="margin-bottom:1rem">📄 Lernblatt wird erstellt...</h3><div style="display:flex;justify-content:center;padding:2rem"><div class="loading-spinner"></div></div>`;
+  // Kontext aus Projekt-Dateien holen
+  let context='';
+  if(item.project_id){
+    const files=await dbGet('project_files',`project_id=eq.${item.project_id}`)||[];
+    context=files.map(f=>f.content.slice(0,1500)).join('\n\n').slice(0,6000);
+  }
+  const prompt=`Erstelle ein kompaktes Lernblatt zum Thema "${item.title}".${context?`\n\nNutze diesen Lernstoff als Grundlage:\n${context}`:''}\n\nFormat: Markdown mit Überschriften, Stichpunkten, wichtigen Begriffen fett. Kompakt aber vollständig, max 400 Wörter.`;
+  try{
+    const res=await callBackend(prompt);
+    $('modal-content').innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h3>📄 Lernblatt: ${item.title}</h3>
+        <button class="btn-ghost btn-sm" onclick="closeModal()">✕</button>
+      </div>
+      <div class="summary-wrap" style="max-height:60vh;overflow-y:auto">${marked.parse(res)}</div>
+      <button class="btn-primary" style="width:100%;margin-top:1rem" onclick="closeModal()">Fertig</button>`;
+  }catch{
+    $('modal-content').innerHTML=`<p>Fehler beim Erstellen des Lernblatts.</p><button class="btn-ghost" onclick="closeModal()">Schliessen</button>`;
+  }
 }
 
 async function addCalItem(dateStr){
