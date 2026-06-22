@@ -308,3 +308,13 @@ html,body{height:100%;font-family:var(--font-body);background:var(--bg1);color:v
 .quiz-question-card{position:relative;z-index:1;}
 .quiz-option-btn{position:relative;z-index:2;cursor:pointer;}
 #quiz-options-wrap{position:relative;z-index:2;}
+
+/* TAB INTRO */
+.tab-intro{background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(139,92,246,.06));border:1px solid rgba(99,102,241,.2);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.25rem;}
+.tab-intro-title{font-size:1rem;font-weight:700;margin-bottom:.25rem;}
+.tab-intro-text{font-size:.85rem;color:var(--text2);line-height:1.5;}
+
+/* KALENDER KLICKBAR */
+.cal-cell{cursor:pointer;}
+.cal-cell:hover:not(.cal-empty){border-color:var(--accent);background:rgba(99,102,241,.06);}
+.cal-modal-items{display:flex;flex-direction:column;gap:.4rem;max-height:280px;overflow-y:auto;margin-bottom:.5rem;}
