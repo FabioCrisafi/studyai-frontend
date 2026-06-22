@@ -1,4 +1,4 @@
-const CACHE = 'studyai-v6';
+const CACHE = 'studyai-v8';
 const ASSETS = ['/', '/index.html', '/app.js', '/style.css', '/manifest.json'];
 
 self.addEventListener('install', e => {
