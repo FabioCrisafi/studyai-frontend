@@ -273,15 +273,13 @@ async function handleHubFiles(files){
       if(file.name.endsWith('.docx')){
         const res=await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});
         content=res.value; fileType='docx';
-      }else if(file.type==='application/pdf'){
-        content=await fileToBase64(file); fileType='pdf';
-      }else if(file.type.startsWith('image/')){
-        content=await fileToBase64(file); fileType='image';
+      }else if(file.type==='application/pdf'||file.name.endsWith('.pdf')){
+        content=await pdfToText(file); fileType='pdf';
       }else{
         content=await file.text(); fileType='text';
       }
-      // Kürzen auf max 8000 Zeichen für Text
-      if(fileType==='text'||fileType==='docx') content=content.slice(0,8000);
+      content=content.slice(0,8000);
+      if(!content.trim()){showToast(`${file.name}: kein Text gefunden`,'error');continue;}
       const saved=await dbInsert('project_files',{user_id:currentUser.id,project_id:currentProject.id,name:file.name,content,file_type:fileType});
       projectFiles.unshift(saved);
     }catch(e){showToast(`Fehler bei ${file.name}: ${e.message}`,'error');}
@@ -385,27 +383,47 @@ function openAiPlanFromFiles(){
   $('modal-overlay').style.display='flex';
 }
 
+// Berechnet alle Daten zwischen heute und Prüfung die auf erlaubte Wochentage fallen
+// dayLabels = ['Mo','Di',...] → JS: 1=Mo ... 0=So
+function computeAllowedDates(examDate, dayLabels){
+  const map={'Mo':1,'Di':2,'Mi':3,'Do':4,'Fr':5,'Sa':6,'So':0};
+  const allowed=dayLabels.map(d=>map[d]);
+  const dates=[];
+  const cur=new Date(); cur.setHours(12,0,0,0);
+  const end=new Date(examDate+'T12:00:00');
+  while(cur<=end){
+    if(allowed.includes(cur.getDay())) dates.push(cur.toISOString().split('T')[0]);
+    cur.setDate(cur.getDate()+1);
+  }
+  return dates;
+}
+
 async function generateAiPlanFromFiles(){
   const examDate=$('ai-exam-date').value,hours=$('ai-hours').value;
-  const days=[...document.querySelectorAll('.day-btn.selected')].map(b=>b.textContent).join(', ');
+  const dayLabels=[...document.querySelectorAll('.day-btn.selected')].map(b=>b.textContent);
   if(!examDate)return showToast('Bitte Prüfungsdatum angeben','error');
-  if(!days)return showToast('Bitte Tage wählen','error');
+  if(!dayLabels.length)return showToast('Bitte Tage wählen','error');
+  const allowedDates=computeAllowedDates(examDate,dayLabels);
+  if(!allowedDates.length)return showToast('Keine passenden Tage bis zur Prüfung','error');
   closeModal();showToast('KI analysiert Dateien und erstellt Lernplan...');
-  const today=new Date().toISOString().split('T')[0];
-  // Inhalte zusammenfassen
   const filesSummary=projectFiles.map(f=>`- ${f.name}: ${f.content.slice(0,500)}`).join('\n');
-  const prompt=`Du bist ein Lernplaner. Erstelle einen Lernplan von heute (${today}) bis zur Prüfung (${examDate}).
-Verfügbare Tage: ${days}. ${hours}h/Tag.
+  const prompt=`Du bist ein Lernplaner. Erstelle einen Lernplan für die Prüfung am ${examDate}.
+Lerne ${hours}h pro Lerntag.
 Folgende Dokumente müssen gelernt werden:
 ${filesSummary}
 
-Verteile den Lernstoff sinnvoll auf die verfügbaren Tage. Plane auch Wiederholungstage.
-Antworte NUR mit JSON-Array:
+WICHTIG: Du darfst NUR diese exakten Daten verwenden (keine anderen!):
+${allowedDates.join(', ')}
+
+Verteile den Lernstoff sinnvoll auf diese Tage. Plane Wiederholungen gegen Ende.
+Antworte NUR mit JSON-Array, jedes Datum muss aus der erlaubten Liste sein:
 [{"date":"YYYY-MM-DD","title":"Lernaufgabe"}]
 Kein Text ausserhalb des JSON!`;
   try{
     const res=await callBackend(prompt);
-    const items=JSON.parse(res.match(/\[[\s\S]*\]/)[0]);
+    let items=JSON.parse(res.match(/\[[\s\S]*\]/)[0]);
+    // Sicherheit: nur erlaubte Daten durchlassen
+    items=items.filter(it=>allowedDates.includes(it.date));
     for(const item of items)await dbInsert('study_plan',{user_id:currentUser.id,title:item.title,date:item.date,done:false});
     await loadProjectPlan();
     showToast(`${items.length} Lerntermine erstellt ✓`);
@@ -447,11 +465,24 @@ async function handleFile(file){
   $('file-preview-name').textContent=file.name;
   $('set-title-input').value=file.name.replace(/\.[^.]+$/,'');
   if(file.name.endsWith('.docx')){const res=await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});uploadedFileData={type:'text',content:res.value};}
-  else if(file.type==='application/pdf'||file.type.startsWith('image/')){uploadedFileData={type:file.type.startsWith('image/')?'image':'pdf',content:await fileToBase64(file),mimeType:file.type};}
+  else if(file.type==='application/pdf'||file.name.endsWith('.pdf')){uploadedFileData={type:'text',content:await pdfToText(file)};}
   else{uploadedFileData={type:'text',content:await file.text()};}
 }
 
 function fileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});}
+
+// PDF-Text im Browser extrahieren
+async function pdfToText(file){
+  const ab=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:ab}).promise;
+  let text='';
+  for(let i=1;i<=pdf.numPages;i++){
+    const page=await pdf.getPage(i);
+    const content=await page.getTextContent();
+    text+=content.items.map(it=>it.str).join(' ')+'\n';
+  }
+  return text;
+}
 
 function setMode(m){currentMode=m;document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));$(`mode-${m}`).classList.add('active');}
 
@@ -464,7 +495,7 @@ async function analyzeDocument(){
     let flashcards=[],summary='',quiz=[];
     for(const mode of modes){
       $('loading-text').textContent=`Erstelle ${mode==='flashcards'?'Karteikarten':mode==='summary'?'Zusammenfassung':'Quiz'}...`;
-      const content=uploadedFileData.type==='text'?uploadedFileData.content.slice(0,8000):'';
+      const content=uploadedFileData.content.slice(0,8000);
       const result=await callBackend(buildPromptFromContent(mode,content,title));
       if(mode==='flashcards')flashcards=parseFlashcards(result);
       if(mode==='summary')summary=result;
@@ -765,14 +796,16 @@ function openAiPlanModal(){
 }
 async function generateAiPlan(){
   const examDate=$('ai-exam-date').value,hours=$('ai-hours').value,topic=$('ai-topic').value.trim();
-  const days=[...document.querySelectorAll('.day-btn.selected')].map(b=>b.textContent).join(', ');
+  const dayLabels=[...document.querySelectorAll('.day-btn.selected')].map(b=>b.textContent);
   if(!examDate||!topic)return showToast('Bitte Datum und Thema angeben','error');
-  if(!days)return showToast('Bitte mindestens einen Tag wählen','error');
+  if(!dayLabels.length)return showToast('Bitte mindestens einen Tag wählen','error');
+  const allowedDates=computeAllowedDates(examDate,dayLabels);
+  if(!allowedDates.length)return showToast('Keine passenden Tage bis zur Prüfung','error');
   closeModal();showToast('KI erstellt Lernplan...');
-  const today=new Date().toISOString().split('T')[0];
   try{
-    const res=await callBackend(`Erstelle Lernplan von heute (${today}) bis Prüfung (${examDate}).\nVerfügbare Tage: ${days}. ${hours}h/Tag.\nThema: ${topic}.\nNUR JSON:\n[{"date":"YYYY-MM-DD","title":"Aufgabe"}]`);
-    const items=JSON.parse(res.match(/\[[\s\S]*\]/)[0]);
+    const res=await callBackend(`Du bist ein Lernplaner für die Prüfung am ${examDate}. ${hours}h pro Lerntag.\nThema: ${topic}.\n\nWICHTIG: Verwende NUR diese exakten Daten (keine anderen!):\n${allowedDates.join(', ')}\n\nVerteile den Stoff sinnvoll, plane Wiederholungen.\nNUR JSON:\n[{"date":"YYYY-MM-DD","title":"Aufgabe"}]`);
+    let items=JSON.parse(res.match(/\[[\s\S]*\]/)[0]);
+    items=items.filter(it=>allowedDates.includes(it.date));
     for(const item of items)await dbInsert('study_plan',{user_id:currentUser.id,title:item.title,date:item.date,done:false});
     await loadProjectPlan();showToast(`${items.length} Termine erstellt ✓`);
   }catch{showToast('Fehler beim Erstellen','error');}
@@ -842,10 +875,12 @@ function showExamResult(){
 function resetExam(){$('exam-play').style.display=$('exam-result').style.display='none';$('exam-setup').style.display='block';}
 
 // ── Kalender ──────────────────────────────────────────────────────────────────
+let calPlanCache=[];
 function loadCalendar(){const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();renderCalendar();}
 function calNav(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
 async function renderCalendar(){
   const allPlan=await dbGet('study_plan',`user_id=eq.${currentUser.id}&order=date.asc`)||[];
+  calPlanCache=allPlan;
   const byDate={};allPlan.forEach(item=>{if(!byDate[item.date])byDate[item.date]=[];byDate[item.date].push(item);});
   const months=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
   $('cal-month-label').textContent=`${months[calMonth]} ${calYear}`;
@@ -857,7 +892,7 @@ async function renderCalendar(){
   for(let d=1;d<=days;d++){
     const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const items=byDate[dateStr]||[];const isToday=dateStr===today;
-    html+=`<div class="cal-cell ${isToday?'cal-today':''} ${items.length?'cal-has-events':''}">
+    html+=`<div class="cal-cell ${isToday?'cal-today':''} ${items.length?'cal-has-events':''}" onclick="openDayModal('${dateStr}')">
       <div class="cal-day-num">${d}</div>
       ${items.slice(0,2).map(it=>`<div class="cal-event ${it.done?'cal-event-done':''}">${it.title}</div>`).join('')}
       ${items.length>2?`<div class="cal-event-more">+${items.length-2}</div>`:''}
@@ -866,7 +901,79 @@ async function renderCalendar(){
   $('cal-grid').innerHTML=html;
   const upcoming=allPlan.filter(p=>p.date>=today&&!p.done).slice(0,5);
   $('cal-upcoming-list').innerHTML=!upcoming.length?'<p class="empty-hint-small">Keine kommenden Termine</p>':
-    upcoming.map(p=>`<div class="plan-item"><span>📅 ${new Date(p.date+'T12:00:00').toLocaleDateString('de-CH',{weekday:'short',day:'numeric',month:'short'})}</span><span>${p.title}</span></div>`).join('');
+    upcoming.map(p=>`<div class="plan-item">
+      <span class="${p.set_id?'plan-item-link':''}" onclick="${p.set_id?`openSetGlobal('${p.set_id}')`:''}">📅 ${new Date(p.date+'T12:00:00').toLocaleDateString('de-CH',{weekday:'short',day:'numeric',month:'short'})} · ${p.title}</span>
+    </div>`).join('');
+}
+
+// Tag anklicken → Termine des Tages anzeigen + neuen erstellen
+function openDayModal(dateStr){
+  const items=calPlanCache.filter(p=>p.date===dateStr);
+  const label=new Date(dateStr+'T12:00:00').toLocaleDateString('de-CH',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  $('modal-content').innerHTML=`
+    <h3 style="margin-bottom:.5rem">${label}</h3>
+    <div class="cal-modal-items">
+      ${items.length?items.map(it=>`
+        <div class="plan-item ${it.done?'plan-done':''}">
+          <input type="checkbox" ${it.done?'checked':''} onchange="togglePlanItemCal('${it.id}',this.checked)"/>
+          <span class="${it.set_id?'plan-item-link':''}" onclick="${it.set_id?`openSetGlobal('${it.set_id}')`:''}">${it.title}</span>
+          <button class="btn-ghost btn-sm" onclick="editCalItem('${it.id}','${it.title.replace(/'/g,"\\'")}','${it.date}')">✏️</button>
+          <button class="btn-ghost btn-sm btn-danger" onclick="deleteCalItem('${it.id}','${dateStr}')">✕</button>
+        </div>`).join(''):'<p class="empty-hint-small">Keine Termine an diesem Tag.</p>'}
+    </div>
+    <div class="auth-field" style="margin-top:1rem"><label>Neuer Termin</label><input type="text" id="cal-new-title" placeholder="z.B. Mathe lernen" onkeydown="if(event.key==='Enter')addCalItem('${dateStr}')"/></div>
+    <div style="display:flex;gap:.75rem;margin-top:.75rem">
+      <button class="btn-primary" onclick="addCalItem('${dateStr}')">+ Hinzufügen</button>
+      <button class="btn-ghost" onclick="closeModal()">Schliessen</button>
+    </div>`;
+  $('modal-overlay').style.display='flex';
+}
+
+async function addCalItem(dateStr){
+  const title=$('cal-new-title').value.trim();
+  if(!title)return showToast('Bitte Titel eingeben','error');
+  await dbInsert('study_plan',{user_id:currentUser.id,title,date:dateStr,done:false});
+  closeModal();renderCalendar();showToast('Termin hinzugefügt ✓');
+}
+async function togglePlanItemCal(id,done){
+  await fetch(`${SUPA_URL}/rest/v1/study_plan?id=eq.${id}`,{method:'PATCH',headers:{...dbH(),'Prefer':'return=representation'},body:JSON.stringify({done})});
+  const it=calPlanCache.find(p=>p.id===id);if(it)it.done=done;
+}
+function editCalItem(id,title,date){
+  $('modal-content').innerHTML=`
+    <h3 style="margin-bottom:1rem">Termin bearbeiten</h3>
+    <div class="auth-field"><label>Titel</label><input type="text" id="cal-edit-title" value="${title}"/></div>
+    <div class="auth-field"><label>Datum</label><input type="date" id="cal-edit-date" value="${date}"/></div>
+    <div style="display:flex;gap:.75rem;margin-top:1rem">
+      <button class="btn-primary" onclick="saveCalEdit('${id}')">Speichern</button>
+      <button class="btn-ghost" onclick="closeModal()">Abbrechen</button>
+    </div>`;
+}
+async function saveCalEdit(id){
+  const title=$('cal-edit-title').value.trim(),date=$('cal-edit-date').value;
+  if(!title||!date)return showToast('Bitte Titel und Datum angeben','error');
+  await dbPatch('study_plan',`id=eq.${id}`,{title,date});
+  closeModal();renderCalendar();showToast('Termin aktualisiert ✓');
+}
+async function deleteCalItem(id,dateStr){
+  await dbDelete('study_plan',`id=eq.${id}`);
+  calPlanCache=calPlanCache.filter(p=>p.id!==id);
+  openDayModal(dateStr);renderCalendar();showToast('Termin gelöscht');
+}
+
+// Globales Set öffnen (vom Kalender aus, ohne Projekt-Kontext)
+async function openSetGlobal(id){
+  const set=await dbGet('learning_sets',`id=eq.${id}`).then(r=>r[0]);
+  if(!set){showToast('Lernset nicht gefunden','error');return;}
+  if(set.project_id){
+    currentProject=allProjects.find(p=>p.id===set.project_id)||await dbGet('projects',`id=eq.${set.project_id}`).then(r=>r[0]);
+  }
+  closeModal();
+  await loadProjectSetsForGlobal(set.project_id);
+  openSet(id);
+}
+async function loadProjectSetsForGlobal(projectId){
+  if(projectId) allSets=await dbGet('learning_sets',`project_id=eq.${projectId}`)||[];
 }
 
 // ── Timer ─────────────────────────────────────────────────────────────────────
