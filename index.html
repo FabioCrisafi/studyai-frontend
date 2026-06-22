@@ -10,6 +10,8 @@
 <meta name="apple-mobile-web-app-title" content="StudyAI"/>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
@@ -27,14 +29,14 @@
       <button class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Registrieren</button>
     </div>
     <div id="auth-login-form">
-      <div class="auth-field"><label>E-Mail</label><input type="email" id="login-email" placeholder="deine@email.ch" autocomplete="email"/></div>
-      <div class="auth-field"><label>Passwort</label><input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"/></div>
+      <div class="auth-field"><label>E-Mail</label><input type="email" id="login-email" placeholder="deine@email.ch" autocomplete="email" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <div class="auth-field"><label>Passwort</label><input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
       <button class="auth-btn" onclick="doLogin()"><span id="login-btn-text">Anmelden</span></button>
     </div>
     <div id="auth-signup-form" style="display:none">
-      <div class="auth-field"><label>Name</label><input type="text" id="signup-name" placeholder="Max Muster"/></div>
-      <div class="auth-field"><label>E-Mail</label><input type="email" id="signup-email" placeholder="deine@email.ch" autocomplete="email"/></div>
-      <div class="auth-field"><label>Passwort</label><input type="password" id="signup-password" placeholder="Mind. 6 Zeichen" autocomplete="new-password"/></div>
+      <div class="auth-field"><label>Name</label><input type="text" id="signup-name" placeholder="Max Muster" onkeydown="if(event.key==='Enter')doSignup()"/></div>
+      <div class="auth-field"><label>E-Mail</label><input type="email" id="signup-email" placeholder="deine@email.ch" autocomplete="email" onkeydown="if(event.key==='Enter')doSignup()"/></div>
+      <div class="auth-field"><label>Passwort</label><input type="password" id="signup-password" placeholder="Mind. 6 Zeichen" autocomplete="new-password" onkeydown="if(event.key==='Enter')doSignup()"/></div>
       <button class="auth-btn" onclick="doSignup()"><span id="signup-btn-text">Konto erstellen</span></button>
     </div>
     <div id="auth-error" class="auth-error" style="display:none"></div>
@@ -112,26 +114,34 @@
 
     <!-- Dateien Hub -->
     <div id="proj-tab-files">
+      <div class="tab-intro">
+        <h3 class="tab-intro-title">📂 Schritt 1: Dateien hochladen</h3>
+        <p class="tab-intro-text">Lade hier deine Unterlagen hoch (PDF, Word, Text). Daraus erstellt die KI anschliessend automatisch Lernsets und einen Lernplan.</p>
+      </div>
       <div class="file-hub-upload" id="file-hub-drop">
         <div class="upload-icon">📂</div>
         <p class="upload-title">Dateien hochladen</p>
-        <p class="upload-sub">PDF, Word, Bild oder Text · Drag & Drop</p>
-        <input type="file" id="hub-file-input" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.webp" multiple style="display:none" onchange="handleHubFiles(this.files)"/>
+        <p class="upload-sub">PDF, Word oder Text · Drag & Drop</p>
+        <input type="file" id="hub-file-input" accept=".pdf,.doc,.docx,.txt" multiple style="display:none" onchange="handleHubFiles(this.files)"/>
         <button class="btn-primary" onclick="document.getElementById('hub-file-input').click()">Dateien wählen</button>
       </div>
       <div id="hub-files-list" class="hub-files-list"></div>
       <div id="hub-actions" class="hub-actions" style="display:none">
-        <button class="btn-primary" onclick="createSetsFromFiles()">✨ Lernsets aus Dateien erstellen</button>
-        <button class="btn-ghost" onclick="openAiPlanFromFiles()">📅 KI-Lernplan aus Dateien</button>
+        <button class="btn-primary" onclick="createSetsFromFiles()">✨ Lernsets erstellen</button>
+        <button class="btn-ghost" onclick="openAiPlanFromFiles()">📅 KI-Lernplan erstellen</button>
       </div>
     </div>
 
     <!-- Lernsets -->
     <div id="proj-tab-sets" style="display:none">
+      <div class="tab-intro">
+        <h3 class="tab-intro-title">📚 Schritt 2: Lernen</h3>
+        <p class="tab-intro-text">Hier sind deine Lernsets. Öffne ein Set für Karteikarten, Zusammenfassung und Quiz.</p>
+      </div>
       <div class="proj-tab-toolbar">
         <button class="btn-primary" onclick="showUploadForProject()">+ Einzelnes Lernset</button>
       </div>
-      <div id="proj-sets-empty" class="empty-hint" style="display:none">Noch keine Lernsets.</div>
+      <div id="proj-sets-empty" class="empty-hint" style="display:none">Noch keine Lernsets. Lade im Tab "Dateien" Unterlagen hoch und erstelle Lernsets daraus.</div>
       <div class="library-grid" id="proj-sets-grid"></div>
     </div>
 
