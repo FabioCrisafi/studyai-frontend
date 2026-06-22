@@ -74,8 +74,14 @@ async function doSignup() {
     const res=await fetch(`${SUPA_URL}/auth/v1/signup`,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_ANON},body:JSON.stringify({email,password,data:{name}})});
     const data=await res.json();
     if(data.error)throw new Error(data.error.message||data.msg);
-    if(data.session)await initSession(data.session,name);
-    else showAuthSuccess('Konto erstellt! Bitte E-Mail bestätigen.');
+    if(data.session){await initSession(data.session,name);}
+    else{
+      // E-Mail-Bestätigung ist deaktiviert → direkt einloggen
+      const loginRes=await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_ANON},body:JSON.stringify({email,password})});
+      const loginData=await loginRes.json();
+      if(loginData.access_token)await initSession(loginData,name);
+      else showAuthSuccess('Konto erstellt! Du kannst dich jetzt anmelden.');
+    }
   }catch(e){showAuthError(e.message);}
   $('signup-btn-text').textContent='Konto erstellen';
 }
@@ -286,6 +292,8 @@ async function handleHubFiles(files){
   }
   renderHubFiles();
   showToast('Dateien hochgeladen ✓');
+  // Automatisch anbieten Lernsets zu erstellen
+  setTimeout(()=>createSetsFromFiles(),600);
 }
 
 async function deleteHubFile(id){
@@ -300,7 +308,7 @@ async function createSetsFromFiles(){
   if(!projectFiles.length)return showToast('Keine Dateien vorhanden','error');
   $('modal-content').innerHTML=`
     <h3 style="margin-bottom:1rem">✨ Lernsets erstellen</h3>
-    <p style="color:var(--text2);margin-bottom:1rem">Wähle die Dateien aus denen Lernsets erstellt werden sollen:</p>
+    <p style="color:var(--text2);margin-bottom:1rem">Aus diesen ${projectFiles.length} Dateien wird je ein Lernset erstellt:</p>
     <div class="hub-file-select">
       ${projectFiles.map(f=>`<label class="exam-set-check"><input type="checkbox" value="${f.id}" checked/> ${fileIcon(f.file_type)} ${f.name}</label>`).join('')}
     </div>
@@ -312,7 +320,7 @@ async function createSetsFromFiles(){
       </div>
     </div>
     <div style="display:flex;gap:.75rem;margin-top:1.25rem">
-      <button class="btn-primary" onclick="runCreateSets()">✨ Erstellen</button>
+      <button class="btn-primary" onclick="runCreateSets()">✨ Jetzt erstellen</button>
       <button class="btn-ghost" onclick="closeModal()">Abbrechen</button>
     </div>`;
   $('modal-overlay').style.display='flex';
