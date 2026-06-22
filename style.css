@@ -222,16 +222,16 @@ html,body{height:100%;font-family:var(--font-body);background:var(--bg1);color:v
 /* KALENDER */
 .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;}
 .cal-header h3{font-size:1.2rem;font-weight:700;}
-.cal-day-names{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;}
+.cal-day-names{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:4px;}
 .cal-day-names span{text-align:center;font-size:.75rem;color:var(--text2);padding:.5rem;}
-.cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
-.cal-cell{min-height:80px;background:var(--bg2);border:1px solid var(--border1);border-radius:10px;padding:.5rem;transition:.2s;}
+.cal-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;}
+.cal-cell{min-width:0;min-height:80px;background:var(--bg2);border:1px solid var(--border1);border-radius:10px;padding:.5rem;transition:.2s;overflow:hidden;}
 .cal-cell:hover{border-color:var(--border2);}
 .cal-empty{background:transparent;border-color:transparent;}
 .cal-today{border-color:var(--accent);background:rgba(99,102,241,.08);}
 .cal-has-events{background:var(--bg3);}
 .cal-day-num{font-size:.8rem;font-weight:600;margin-bottom:.35rem;}
-.cal-event{font-size:.7rem;background:rgba(99,102,241,.2);color:var(--accent);border-radius:4px;padding:.15rem .35rem;margin-bottom:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cal-event{font-size:.7rem;background:rgba(99,102,241,.2);color:var(--accent);border-radius:4px;padding:.15rem .35rem;margin-bottom:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
 .cal-event-done{background:rgba(52,211,153,.15);color:var(--green);text-decoration:line-through;}
 .cal-event-more{font-size:.7rem;color:var(--text2);}
 .cal-upcoming{margin-top:2rem;}
@@ -318,3 +318,10 @@ html,body{height:100%;font-family:var(--font-body);background:var(--bg1);color:v
 .cal-cell{cursor:pointer;}
 .cal-cell:hover:not(.cal-empty){border-color:var(--accent);background:rgba(99,102,241,.06);}
 .cal-modal-items{display:flex;flex-direction:column;gap:.4rem;max-height:280px;overflow-y:auto;margin-bottom:.5rem;}
+
+/* LERNSTOFF MODAL */
+.study-mat-section{margin-bottom:1.25rem;}
+.study-mat-label{font-size:.8rem;color:var(--text2);margin-bottom:.5rem;font-weight:600;}
+.study-mat-set{display:flex;flex-direction:column;align-items:flex-start;gap:.2rem;width:100%;text-align:left;padding:.7rem .9rem;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:var(--text);cursor:pointer;margin-bottom:.4rem;font-size:.9rem;transition:.2s;}
+.study-mat-set:hover{border-color:var(--accent);background:rgba(99,102,241,.08);}
+.study-mat-set span{font-size:.75rem;color:var(--text2);}
