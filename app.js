@@ -13,6 +13,7 @@ let currentMode = 'all', uploadForProjectId = null;
 let fcCards = [], fcIndex = 0, fcDifficulty = {};
 let quizData = [], quizIndex = 0, quizScore = 0, quizAnswered = false, quizWrong = [];
 let examQuestions = [], examIndex = 0, examScore = 0, examAnswered = false;
+let ssQuizData=[], ssQuizIndex=0, ssQuizScore=0, ssQuizAnswered=false, ssQuizWrong=[];
 let timerInterval = null, timerSeconds = 25*60, timerTotal = 25*60, timerRunning = false;
 let calYear, calMonth;
 let isDark = true, deferredInstall = null;
@@ -444,15 +445,25 @@ async function loadProjectSets(){
   allSets=await dbGet('learning_sets',`project_id=eq.${currentProject.id}&order=updated_at.desc`)||[];
   $('proj-sets-empty').style.display=allSets.length?'none':'block';
   $('proj-sets-grid').innerHTML=allSets.map(s=>`
-    <div class="lib-card" onclick="openSet('${s.id}')">
-      <div class="lib-card-title">${s.title}</div>
-      <div class="lib-card-meta">
-        <span class="subject-tag">${s.subject||'Allgemein'}</span>
-        <span>${s.flashcards?.length||0} Karten · ${s.quiz?.length||0} Fragen</span>
+    <div class="lib-card">
+      <button class="lib-card-delete" onclick="event.stopPropagation();deleteSetFromList('${s.id}','${s.title.replace(/'/g,"\\'")}')" title="Löschen">🗑️</button>
+      <div onclick="openSet('${s.id}')" style="cursor:pointer">
+        <div class="lib-card-title">${s.title}</div>
+        <div class="lib-card-meta">
+          <span class="subject-tag">${s.subject||'Allgemein'}</span>
+          <span>${s.flashcards?.length||0} Karten · ${s.quiz?.length||0} Fragen</span>
+        </div>
+        <div class="lib-card-date">${new Date(s.updated_at).toLocaleDateString('de-CH')}</div>
       </div>
-      <div class="lib-card-date">${new Date(s.updated_at).toLocaleDateString('de-CH')}</div>
     </div>`).join('');
   renderExamSetSelect(allSets);
+}
+async function deleteSetFromList(id,title){
+  if(!confirm(`Lernset "${title}" wirklich löschen?`))return;
+  await dbDelete('learning_sets',`id=eq.${id}`);
+  showToast('Lernset gelöscht');
+  await loadProjectSets();
+  updateProjectProgress();
 }
 
 // ── Upload (Einzeln) ──────────────────────────────────────────────────────────
@@ -640,7 +651,7 @@ function selectAnswer(i,q){
     opts.forEach((b,idx)=>b.classList.add(idx===(q.correct?0:1)?'correct':'wrong'));
   }else{
     correct=i===q.correct;
-    opts.forEach((b,idx)=>b.classList.add(idx===q.correct?'correct':idx===i?'wrong':''));
+    opts.forEach((b,idx)=>{if(idx===q.correct)b.classList.add('correct');else if(idx===i)b.classList.add('wrong');});
   }
   opts.forEach(b=>b.onclick=null); // Klicks deaktivieren
   if(correct)quizScore++;else quizWrong.push(q);
@@ -739,11 +750,103 @@ function ssFcRender(){const c=fcCards[fcIndex];$('ss-fc-front').textContent=c.fr
 function ssFlipCard(){$('ss-fc-card').classList.toggle('flipped');}
 function ssFcNav(dir){fcIndex=Math.max(0,Math.min(fcCards.length-1,fcIndex+dir));ssFcRender();}
 function startSSQuiz(){
-  // Quiz im Result-Screen starten (keine doppelten IDs erzeugen)
-  renderResult(currentSet, true);
-  showScreen('result');
-  switchResultTab('quiz');
-  startQuiz();
+  ssQuizData=currentSet.quiz||[];
+  ssQuizIndex=0; ssQuizScore=0; ssQuizWrong=[];
+  $('ss-quiz').innerHTML=`
+    <div class="quiz-q-meta"><div class="quiz-q-num" id="ss2-num">Frage 1/${ssQuizData.length}</div><div class="quiz-q-type-badge" id="ss2-type"></div></div>
+    <div class="quiz-progress-bar"><div id="ss2-progress" class="quiz-progress-fill"></div></div>
+    <div class="quiz-question-card">
+      <p class="quiz-question-text" id="ss2-question"></p>
+      <div id="ss2-options"></div>
+      <div id="ss2-freetext" style="display:none"><textarea id="ss2-ft-input" placeholder="Deine Antwort..." rows="3"></textarea><button class="btn-primary" onclick="ssSubmitFreetext()">Antwort prüfen</button></div>
+      <div id="ss2-feedback" style="display:none"></div>
+    </div>
+    <button class="btn-primary quiz-next-btn" id="ss2-next" style="display:none;width:100%" onclick="ssNextQuestion()">Weiter →</button>`;
+  ssRenderQuestion();
+}
+
+function ssRenderQuestion(){
+  if(ssQuizIndex>=ssQuizData.length){ssShowResult();return;}
+  const q=ssQuizData[ssQuizIndex]; ssQuizAnswered=false;
+  $('ss2-num').textContent=`Frage ${ssQuizIndex+1}/${ssQuizData.length}`;
+  $('ss2-type').textContent=q.type==='multiple_choice'?'Multiple Choice':q.type==='true_false'?'Wahr/Falsch':'Freitext';
+  $('ss2-question').textContent=q.question;
+  $('ss2-progress').style.width=(ssQuizIndex/ssQuizData.length*100)+'%';
+  $('ss2-feedback').style.display='none'; $('ss2-feedback').innerHTML='';
+  $('ss2-next').style.display='none';
+  $('ss2-freetext').style.display='none';
+  $('ss2-options').innerHTML='';
+  if(q.type==='freetext'){
+    $('ss2-freetext').style.display='block'; $('ss2-ft-input').value=''; $('ss2-ft-input').disabled=false;
+  }else{
+    const opts=q.type==='true_false'?['Wahr','Falsch']:q.options;
+    opts.forEach((opt,i)=>{
+      const b=document.createElement('button');
+      b.className='quiz-option-btn'; b.textContent=opt;
+      b.onclick=()=>ssSelectAnswer(i,q);
+      $('ss2-options').appendChild(b);
+    });
+  }
+}
+
+async function ssSelectAnswer(i,q){
+  if(ssQuizAnswered)return; ssQuizAnswered=true;
+  const opts=document.querySelectorAll('#ss2-options .quiz-option-btn');
+  let correct;
+  if(q.type==='true_false'){correct=(i===0)===q.correct;opts.forEach((b,idx)=>b.classList.add(idx===(q.correct?0:1)?'correct':'wrong'));}
+  else{correct=i===q.correct;opts.forEach((b,idx)=>{if(idx===q.correct)b.classList.add('correct');else if(idx===i)b.classList.add('wrong');});}
+  opts.forEach(b=>b.onclick=null);
+  if(correct)ssQuizScore++;else ssQuizWrong.push(q);
+  await ssShowFeedback(correct,q);
+}
+
+async function ssSubmitFreetext(){
+  if(ssQuizAnswered)return;
+  const answer=$('ss2-ft-input').value.trim();if(!answer)return;
+  ssQuizAnswered=true;$('ss2-ft-input').disabled=true;
+  const q=ssQuizData[ssQuizIndex];
+  const res=await callBackend(`Frage: "${q.question}"\nMusterantwort: "${q.answer}"\nAntwort: "${answer}"\nKorrekt? KORREKT oder FALSCH + kurze Erklärung.`);
+  const correct=res.toUpperCase().includes('KORREKT');
+  if(correct)ssQuizScore++;else ssQuizWrong.push(q);
+  await ssShowFeedback(correct,q,res);
+}
+
+async function ssShowFeedback(correct,q,expl){
+  const fb=$('ss2-feedback');
+  fb.style.display='block';
+  fb.innerHTML=correct
+    ?'<span class="feedback-correct">✓ Richtig!</span>'
+    :`<span class="feedback-wrong">✗ Falsch!</span> Richtig: <strong>${q.type==='true_false'?(q.correct?'Wahr':'Falsch'):q.options?.[q.correct]||q.answer}</strong>`;
+  $('ss2-next').style.display='block';
+  if(!correct){
+    const expDiv=document.createElement('div');
+    expDiv.className='quiz-explanation-box';
+    expDiv.innerHTML='<em>Erklärung wird geladen...</em>';
+    fb.appendChild(expDiv);
+    if(expl){expDiv.textContent=expl;}
+    else{
+      try{
+        const res=await callBackend(`Erkläre kurz und verständlich (2-3 Sätze) warum folgende Antwort richtig ist:\nFrage: "${q.question}"\nRichtige Antwort: "${q.type==='true_false'?(q.correct?'Wahr':'Falsch'):q.options?.[q.correct]||q.answer}"`);
+        expDiv.textContent=res;
+      }catch{expDiv.textContent='Erklärung konnte nicht geladen werden.';}
+    }
+  }
+}
+
+function ssNextQuestion(){ssQuizIndex++;ssRenderQuestion();}
+
+async function ssShowResult(){
+  const pct=Math.round(ssQuizScore/ssQuizData.length*100);
+  $('ss-quiz').innerHTML=`<div class="quiz-result-card"><div class="quiz-result-score">${pct}%</div><p>${ssQuizScore} von ${ssQuizData.length} Fragen richtig</p>${ssQuizWrong.length?'<div class="quiz-weakness-wrap"><div class="quiz-weakness-title">📊 Schwächenanalyse</div><div id="ss2-weakness">Analysiere...</div></div>':''}<div class="quiz-result-actions"><button class="btn-ghost" onclick="startSSQuiz()">🔁 Wiederholen</button></div></div>`;
+  if(openSetId)await dbInsert('quiz_stats',{user_id:currentUser.id,set_id:openSetId,score:ssQuizScore,total:ssQuizData.length});
+  await updateStreak();
+  if(pct>=80)launchConfetti();
+  if(ssQuizWrong.length>0){
+    try{
+      const res=await callBackend(`Schwächenanalyse:\n${ssQuizWrong.map(q=>'- '+q.question).join('\n')}\n3-4 Sätze + Lerntipps.`);
+      if($('ss2-weakness'))$('ss2-weakness').textContent=res;
+    }catch{}
+  }
 }
 function switchSSTab(tab){['flash','summary','quiz'].forEach(t=>{$(`ss-${t}`).style.display=t===tab?'block':'none';$(`sstab-${t}`).classList.toggle('active',t===tab);});}
 async function deleteCurrentSet(){if(!openSetId||!confirm('Set löschen?'))return;await dbDelete('learning_sets',`id=eq.${openSetId}`);showToast('Set gelöscht');backToProject();}
@@ -913,7 +1016,7 @@ async function selectExamAnswer(i){
   if(examAnswered)return;examAnswered=true;
   const q=examQuestions[examIndex];const opts=document.querySelectorAll('#exam-opts .quiz-option-btn');let correct;
   if(q.type==='true_false'){correct=(i===0)===q.correct;opts.forEach((b,idx)=>b.classList.add(idx===(q.correct?0:1)?'correct':'wrong'));}
-  else{correct=i===q.correct;opts.forEach((b,idx)=>b.classList.add(idx===q.correct?'correct':idx===i?'wrong':''));}
+  else{correct=i===q.correct;opts.forEach((b,idx)=>{if(idx===q.correct)b.classList.add('correct');else if(idx===i)b.classList.add('wrong');});}
   opts.forEach(b=>b.onclick=null);
   if(correct)examScore++;
   $('exam-feedback').style.display='block';
