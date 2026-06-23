@@ -369,7 +369,14 @@ function buildPromptFromContent(mode,content,filename){
   const ctx=`\n\nDokument "${filename}":\n${content}`;
   if(mode==='flashcards')return`Erstelle 15 Karteikarten aus diesem Dokument. NUR JSON:\n[{"front":"Frage","back":"Antwort"}]${ctx}`;
   if(mode==='summary')return`Strukturierte Zusammenfassung auf Deutsch mit Markdown, 300-500 Wörter.${ctx}`;
-  if(mode==='quiz')return`10 Quizfragen auf Deutsch. NUR JSON:\n[{"type":"multiple_choice","question":"...","options":["A","B","C","D"],"correct":0},{"type":"true_false","question":"...","correct":true},{"type":"freetext","question":"...","answer":"..."}]${ctx}`;
+  if(mode==='quiz')return`Erstelle 10 abwechslungsreiche Quizfragen auf Deutsch zu diesem Stoff.
+Wichtig für Vielfalt:
+- Mische die Fragetypen gut: ca. 5x multiple_choice, 3x true_false, 2x freetext
+- Variiere die Schwierigkeit (einfache Wissensfragen UND anspruchsvollere Verständnis-/Anwendungsfragen)
+- Decke verschiedene Aspekte/Kapitel des Stoffs ab, nicht nur einen Teil
+- Frage nach Definitionen, Zusammenhängen, Beispielen, Vor-/Nachteilen und Anwendungen
+- Bei multiple_choice: plausible falsche Antworten, nicht offensichtlich
+NUR JSON:\n[{"type":"multiple_choice","question":"...","options":["A","B","C","D"],"correct":0},{"type":"true_false","question":"...","correct":true},{"type":"freetext","question":"...","answer":"..."}]${ctx}`;
 }
 
 // ── KI Lernplan aus Dateien ───────────────────────────────────────────────────
@@ -985,7 +992,15 @@ async function startExam(){
     $('exam-play').innerHTML=`<div style="text-align:center;padding:3rem"><div class="loading-spinner" style="margin:0 auto 1rem"></div><p>KI erstellt Prüfungsfragen aus deinen Dateien...</p></div>`;
     const context=projectFiles.map(f=>f.content.slice(0,2000)).join('\n\n').slice(0,7000);
     try{
-      const res=await callBackend(`Erstelle ${numQ} anspruchsvolle Prüfungsfragen auf Deutsch aus diesem Lernstoff. Mix aus multiple_choice, true_false, freetext. NUR JSON:\n[{"type":"multiple_choice","question":"...","options":["A","B","C","D"],"correct":0},{"type":"true_false","question":"...","correct":true},{"type":"freetext","question":"...","answer":"..."}]\n\nLernstoff:\n${context}`);
+      const res=await callBackend(`Erstelle ${numQ} abwechslungsreiche, anspruchsvolle Prüfungsfragen auf Deutsch aus diesem Lernstoff.
+Wichtig für Vielfalt:
+- Mische die Fragetypen (multiple_choice, true_false, freetext)
+- Variiere die Schwierigkeit von einfach bis schwer
+- Decke möglichst viele verschiedene Themen/Kapitel des Stoffs ab
+- Stelle Wissens-, Verständnis- und Anwendungsfragen
+- Vermeide Wiederholungen, jede Frage soll etwas anderes prüfen
+- Bei multiple_choice: plausible, nicht offensichtliche falsche Antworten
+NUR JSON:\n[{"type":"multiple_choice","question":"...","options":["A","B","C","D"],"correct":0},{"type":"true_false","question":"...","correct":true},{"type":"freetext","question":"...","answer":"..."}]\n\nLernstoff:\n${context}`);
       const generated=JSON.parse(res.match(/\[[\s\S]*\]/)[0]);
       allQ=[...allQ,...generated];
     }catch{showToast('Fehler beim Generieren der Fragen','error');resetExam();return;}
