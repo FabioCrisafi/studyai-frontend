@@ -456,7 +456,21 @@ async function loadProjectSets(){
 }
 
 // ── Upload (Einzeln) ──────────────────────────────────────────────────────────
-function showUploadForProject(){uploadForProjectId=currentProject?.id||null;showScreen('upload');resetUpload();}
+function showUploadForProject(){
+  uploadForProjectId=currentProject?.id||null;
+  // Wenn bereits Dateien im Hub sind, Auswahl anbieten
+  if(projectFiles.length){
+    $('modal-content').innerHTML=`
+      <h3 style="margin-bottom:1rem">Neues Lernset</h3>
+      <p style="color:var(--text2);margin-bottom:1rem">Aus welcher Quelle?</p>
+      <button class="btn-primary" style="width:100%;margin-bottom:.6rem" onclick="closeModal();createSetsFromFiles()">📂 Aus hochgeladenen Dateien (${projectFiles.length})</button>
+      <button class="btn-ghost" style="width:100%" onclick="closeModal();openSingleUpload()">⬆️ Neue Datei hochladen</button>`;
+    $('modal-overlay').style.display='flex';
+  } else {
+    openSingleUpload();
+  }
+}
+function openSingleUpload(){showScreen('upload');resetUpload();}
 function backFromUpload(){currentProject?showScreen('project'):showMain('home');}
 function backFromResult(){if(currentProject){showScreen('project');loadProjectSets();}else showMain('home');}
 
@@ -536,12 +550,15 @@ async function saveSet(){
 }
 
 // ── Result / Flashcards ───────────────────────────────────────────────────────
-function renderResult(set){
+function renderResult(set, isSaved){
   fcCards=set.flashcards||[];fcIndex=0;fcDifficulty={};
   renderFlashcard();
   $('summary-content').innerHTML=set.summary?marked.parse(set.summary):'<p>Keine Zusammenfassung</p>';
   quizData=set.quiz||[];$('quiz-start-info').textContent=`${quizData.length} Fragen`;
   $('result-title').textContent=set.title;
+  // Speichern-Button nur bei neuem (ungespeichertem) Set
+  if(isSaved){$('save-btn').style.display='none';}
+  else{$('save-btn').style.display='';$('save-btn').textContent='💾 Speichern';$('save-btn').disabled=false;}
   const hasFc=!!fcCards.length,hasSumm=!!set.summary,hasQuiz=!!quizData.length;
   $('rtab-flash').style.display=hasFc?'':'none';
   $('rtab-summary').style.display=hasSumm?'':'none';
@@ -707,11 +724,10 @@ function ssFcRender(){const c=fcCards[fcIndex];$('ss-fc-front').textContent=c.fr
 function ssFlipCard(){$('ss-fc-card').classList.toggle('flipped');}
 function ssFcNav(dir){fcIndex=Math.max(0,Math.min(fcCards.length-1,fcIndex+dir));ssFcRender();}
 function startSSQuiz(){
-  // Quiz in-place im ss-quiz div starten
-  $('ss-quiz').innerHTML=`
-    <div id="quiz-start-screen" style="display:none"></div>
-    <div id="quiz-play-screen"></div>
-    <div id="quiz-result-screen" style="display:none"></div>`;
+  // Quiz im Result-Screen starten (keine doppelten IDs erzeugen)
+  renderResult(currentSet, true);
+  showScreen('result');
+  switchResultTab('quiz');
   startQuiz();
 }
 function switchSSTab(tab){['flash','summary','quiz'].forEach(t=>{$(`ss-${t}`).style.display=t===tab?'block':'none';$(`sstab-${t}`).classList.toggle('active',t===tab);});}
@@ -821,19 +837,45 @@ async function generateAiPlan(){
 
 // ── Probeprüfung ──────────────────────────────────────────────────────────────
 function renderExamSetSelect(sets){
-  $('exam-sets-select').innerHTML=!sets.length?'<p class="empty-hint-small">Erst Lernsets hinzufügen</p>':
-    '<div class="exam-sets-label">Lernsets auswählen:</div>'+
-    sets.map(s=>`<label class="exam-set-check"><input type="checkbox" value="${s.id}" checked/> ${s.title} (${s.quiz?.length||0} Fragen)</label>`).join('');
+  let html='';
+  if(sets.length){
+    html+='<div class="exam-sets-label">Aus Lernsets:</div>'+
+      sets.map(s=>`<label class="exam-set-check"><input type="checkbox" value="${s.id}" checked/> ${s.title} (${s.quiz?.length||0} Fragen)</label>`).join('');
+  }
+  if(projectFiles.length){
+    html+=`<div class="exam-sets-label" style="margin-top:.75rem">Oder neue Fragen aus Dateien generieren:</div>
+      <label class="exam-set-check"><input type="checkbox" id="exam-from-files"/> 🤖 KI generiert frische Fragen aus den ${projectFiles.length} hochgeladenen Dateien</label>`;
+  }
+  if(!sets.length&&!projectFiles.length){
+    html='<p class="empty-hint-small">Lade erst Dateien hoch oder erstelle Lernsets.</p>';
+  }
+  $('exam-sets-select').innerHTML=html;
 }
 async function startExam(){
-  const checked=[...document.querySelectorAll('.exam-set-check input:checked')].map(c=>c.value);
-  if(!checked.length)return showToast('Bitte mindestens ein Lernset wählen','error');
-  let allQ=[];
-  for(const id of checked){const set=allSets.find(s=>s.id===id);if(set?.quiz)allQ=[...allQ,...set.quiz];}
-  if(!allQ.length)return showToast('Keine Fragen in den gewählten Sets','error');
+  const checked=[...document.querySelectorAll('.exam-set-check input:checked')].filter(c=>c.id!=='exam-from-files').map(c=>c.value);
+  const fromFiles=$('exam-from-files')?.checked;
   const count=$('exam-q-count').value;
+  const numQ=count==='all'?20:parseInt(count);
+
+  let allQ=[];
+  // Fragen aus Lernsets sammeln
+  for(const id of checked){const set=allSets.find(s=>s.id===id);if(set?.quiz)allQ=[...allQ,...set.quiz];}
+
+  // Fragen aus Dateien generieren
+  if(fromFiles&&projectFiles.length){
+    $('exam-setup').style.display='none';$('exam-play').style.display='block';
+    $('exam-play').innerHTML=`<div style="text-align:center;padding:3rem"><div class="loading-spinner" style="margin:0 auto 1rem"></div><p>KI erstellt Prüfungsfragen aus deinen Dateien...</p></div>`;
+    const context=projectFiles.map(f=>f.content.slice(0,2000)).join('\n\n').slice(0,7000);
+    try{
+      const res=await callBackend(`Erstelle ${numQ} anspruchsvolle Prüfungsfragen auf Deutsch aus diesem Lernstoff. Mix aus multiple_choice, true_false, freetext. NUR JSON:\n[{"type":"multiple_choice","question":"...","options":["A","B","C","D"],"correct":0},{"type":"true_false","question":"...","correct":true},{"type":"freetext","question":"...","answer":"..."}]\n\nLernstoff:\n${context}`);
+      const generated=JSON.parse(res.match(/\[[\s\S]*\]/)[0]);
+      allQ=[...allQ,...generated];
+    }catch{showToast('Fehler beim Generieren der Fragen','error');resetExam();return;}
+  }
+
+  if(!allQ.length)return showToast('Bitte mindestens ein Lernset oder Dateien wählen','error');
   allQ=allQ.sort(()=>Math.random()-.5);
-  examQuestions=count==='all'?allQ:allQ.slice(0,parseInt(count));
+  examQuestions=count==='all'?allQ:allQ.slice(0,numQ);
   examIndex=0;examScore=0;examAnswered=false;
   $('exam-setup').style.display='none';$('exam-play').style.display='block';
   renderExamQuestion();
@@ -883,12 +925,15 @@ function showExamResult(){
 function resetExam(){$('exam-play').style.display=$('exam-result').style.display='none';$('exam-setup').style.display='block';}
 
 // ── Kalender ──────────────────────────────────────────────────────────────────
-let calPlanCache=[];
+let calPlanCache=[], calProjectMap={};
 function loadCalendar(){const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();renderCalendar();}
 function calNav(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
 async function renderCalendar(){
   const allPlan=await dbGet('study_plan',`user_id=eq.${currentUser.id}&order=date.asc`)||[];
   calPlanCache=allPlan;
+  // Projekte laden für Labels
+  const projects=await dbGet('projects',`user_id=eq.${currentUser.id}`)||[];
+  calProjectMap={};projects.forEach(p=>calProjectMap[p.id]={name:p.name,color:p.color||'#6366f1',icon:p.icon||'📁'});
   const byDate={};allPlan.forEach(item=>{if(!byDate[item.date])byDate[item.date]=[];byDate[item.date].push(item);});
   const months=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
   $('cal-month-label').textContent=`${months[calMonth]} ${calYear}`;
@@ -902,16 +947,26 @@ async function renderCalendar(){
     const items=byDate[dateStr]||[];const isToday=dateStr===today;
     html+=`<div class="cal-cell ${isToday?'cal-today':''} ${items.length?'cal-has-events':''}" onclick="openDayModal('${dateStr}')">
       <div class="cal-day-num">${d}</div>
-      ${items.slice(0,2).map(it=>`<div class="cal-event ${it.done?'cal-event-done':''}">${it.title}</div>`).join('')}
+      ${items.slice(0,2).map(it=>{
+        const proj=it.project_id?calProjectMap[it.project_id]:null;
+        const dot=proj?`<span class="cal-event-dot" style="background:${proj.color}"></span>`:'';
+        return `<div class="cal-event ${it.done?'cal-event-done':''}" ${proj?`style="border-left:3px solid ${proj.color}"`:''}>${dot}${it.title}</div>`;
+      }).join('')}
       ${items.length>2?`<div class="cal-event-more">+${items.length-2}</div>`:''}
     </div>`;
   }
   $('cal-grid').innerHTML=html;
   const upcoming=allPlan.filter(p=>p.date>=today&&!p.done).slice(0,5);
   $('cal-upcoming-list').innerHTML=!upcoming.length?'<p class="empty-hint-small">Keine kommenden Termine</p>':
-    upcoming.map(p=>`<div class="plan-item">
-      <span class="${p.set_id?'plan-item-link':''}" onclick="${p.set_id?`openSetGlobal('${p.set_id}')`:''}">📅 ${new Date(p.date+'T12:00:00').toLocaleDateString('de-CH',{weekday:'short',day:'numeric',month:'short'})} · ${p.title}</span>
-    </div>`).join('');
+    upcoming.map(p=>{
+      const proj=p.project_id?calProjectMap[p.project_id]:null;
+      const badge=proj?`<span class="cal-proj-badge" style="background:${proj.color}22;color:${proj.color}">${proj.icon} ${proj.name}</span>`:'';
+      return `<div class="plan-item">
+        <span style="flex:1">📅 ${new Date(p.date+'T12:00:00').toLocaleDateString('de-CH',{weekday:'short',day:'numeric',month:'short'})} · ${p.title}</span>
+        ${badge}
+        <button class="btn-primary btn-sm" onclick="openStudyMaterial('${p.id}')">📖 Lernen</button>
+      </div>`;
+    }).join('');
 }
 
 // Tag anklicken → Termine des Tages anzeigen + neuen erstellen
@@ -921,14 +976,17 @@ function openDayModal(dateStr){
   $('modal-content').innerHTML=`
     <h3 style="margin-bottom:.5rem">${label}</h3>
     <div class="cal-modal-items">
-      ${items.length?items.map(it=>`
+      ${items.length?items.map(it=>{
+        const proj=it.project_id?calProjectMap[it.project_id]:null;
+        const badge=proj?`<span class="cal-proj-badge" style="background:${proj.color}22;color:${proj.color}">${proj.icon} ${proj.name}</span>`:'';
+        return `
         <div class="plan-item ${it.done?'plan-done':''}">
           <input type="checkbox" ${it.done?'checked':''} onchange="togglePlanItemCal('${it.id}',this.checked)"/>
-          <span style="flex:1">${it.title}</span>
+          <span style="flex:1">${it.title} ${badge}</span>
           <button class="btn-primary btn-sm" onclick="openStudyMaterial('${it.id}')">📖 Lernen</button>
           <button class="btn-ghost btn-sm" onclick="editCalItem('${it.id}','${it.title.replace(/'/g,"\\'")}','${it.date}')">✏️</button>
           <button class="btn-ghost btn-sm btn-danger" onclick="deleteCalItem('${it.id}','${dateStr}')">✕</button>
-        </div>`).join(''):'<p class="empty-hint-small">Keine Termine an diesem Tag.</p>'}
+        </div>`;}).join(''):'<p class="empty-hint-small">Keine Termine an diesem Tag.</p>'}
     </div>
     <div class="auth-field" style="margin-top:1rem"><label>Neuer Termin</label><input type="text" id="cal-new-title" placeholder="z.B. Mathe lernen" onkeydown="if(event.key==='Enter')addCalItem('${dateStr}')"/></div>
     <div style="display:flex;gap:.75rem;margin-top:.75rem">
