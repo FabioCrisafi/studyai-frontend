@@ -185,8 +185,8 @@
     <div class="upload-area" id="upload-area">
       <div class="upload-icon">📄</div>
       <p class="upload-title">Dokument hochladen</p>
-      <p class="upload-sub">PDF, Word, Bild oder Text · Drag & Drop</p>
-      <input type="file" id="file-input" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.webp" style="display:none" onchange="handleFile(this.files[0])"/>
+      <p class="upload-sub">PDF, Word oder Text · Drag & Drop</p>
+      <input type="file" id="file-input" accept=".pdf,.doc,.docx,.txt" style="display:none" onchange="handleFile(this.files[0])"/>
       <button class="btn-primary" onclick="document.getElementById('file-input').click()">Datei wählen</button>
     </div>
     <div id="file-preview" style="display:none">
