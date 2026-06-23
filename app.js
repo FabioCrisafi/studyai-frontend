@@ -658,13 +658,28 @@ async function submitFreetext(){
   showFeedback(correct,q,res);
 }
 
-function showFeedback(correct,q,expl){
+async function showFeedback(correct,q,expl){
   $('quiz-feedback').style.display='block';
   $('quiz-feedback-text').innerHTML=correct
     ?'<span class="feedback-correct">✓ Richtig!</span>'
     :`<span class="feedback-wrong">✗ Falsch!</span> Richtig: <strong>${q.type==='true_false'?(q.correct?'Wahr':'Falsch'):q.options?.[q.correct]||q.answer}</strong>`;
-  if(expl&&!correct){$('quiz-explanation').textContent=expl;$('quiz-explanation').style.display='block';}
   $('quiz-next-btn').style.display='block';
+  $('quiz-explain-btn').style.display='none';
+  if(!correct){
+    // Bei falscher Antwort automatisch Erklärung laden
+    $('quiz-explanation').style.display='block';
+    if(expl){
+      $('quiz-explanation').textContent=expl;
+    }else{
+      $('quiz-explanation').innerHTML='<em>Erklärung wird geladen...</em>';
+      try{
+        const res=await callBackend(`Erkläre kurz und verständlich (2-3 Sätze) warum folgende Antwort richtig ist:\nFrage: "${q.question}"\nRichtige Antwort: "${q.type==='true_false'?(q.correct?'Wahr':'Falsch'):q.options?.[q.correct]||q.answer}"`);
+        $('quiz-explanation').textContent=res;
+      }catch{$('quiz-explanation').textContent='Erklärung konnte nicht geladen werden.';}
+    }
+  }else{
+    $('quiz-explanation').style.display='none';
+  }
 }
 
 async function explainAnswer(){
@@ -894,7 +909,7 @@ function renderExamQuestion(){
     </div>
     <button class="btn-primary quiz-next-btn" id="exam-next" style="display:none;margin-top:1rem;width:100%" onclick="nextExamQ()">Weiter →</button>`;
 }
-function selectExamAnswer(i){
+async function selectExamAnswer(i){
   if(examAnswered)return;examAnswered=true;
   const q=examQuestions[examIndex];const opts=document.querySelectorAll('#exam-opts .quiz-option-btn');let correct;
   if(q.type==='true_false'){correct=(i===0)===q.correct;opts.forEach((b,idx)=>b.classList.add(idx===(q.correct?0:1)?'correct':'wrong'));}
@@ -904,6 +919,16 @@ function selectExamAnswer(i){
   $('exam-feedback').style.display='block';
   $('exam-feedback').innerHTML=correct?'<span class="feedback-correct">✓ Richtig!</span>':`<span class="feedback-wrong">✗ Falsch!</span> Richtig: <strong>${q.type==='true_false'?(q.correct?'Wahr':'Falsch'):q.options?.[q.correct]}</strong>`;
   $('exam-next').style.display='block';
+  if(!correct){
+    const expDiv=document.createElement('div');
+    expDiv.style.cssText='margin-top:.75rem;font-size:.875rem;color:var(--text2);line-height:1.6';
+    expDiv.innerHTML='<em>Erklärung wird geladen...</em>';
+    $('exam-feedback').appendChild(expDiv);
+    try{
+      const res=await callBackend(`Erkläre kurz und verständlich (2-3 Sätze) warum folgende Antwort richtig ist:\nFrage: "${q.question}"\nRichtige Antwort: "${q.type==='true_false'?(q.correct?'Wahr':'Falsch'):q.options?.[q.correct]}"`);
+      expDiv.textContent=res;
+    }catch{expDiv.textContent='';}
+  }
 }
 async function submitExamFreetext(){
   if(examAnswered)return;examAnswered=true;
@@ -923,6 +948,17 @@ function showExamResult(){
   if(pct>=80)launchConfetti();
 }
 function resetExam(){$('exam-play').style.display=$('exam-result').style.display='none';$('exam-setup').style.display='block';}
+
+function renderCalLegend(){
+  const used=Object.keys(calProjectMap);
+  const legendEl=$('cal-legend');
+  if(!legendEl)return;
+  if(!used.length){legendEl.innerHTML='';return;}
+  legendEl.innerHTML='<span class="cal-legend-label">Projekte:</span>'+used.map(id=>{
+    const p=calProjectMap[id];
+    return `<span class="cal-legend-item"><span class="cal-legend-dot" style="background:${p.color}"></span>${p.icon} ${p.name}</span>`;
+  }).join('');
+}
 
 // ── Kalender ──────────────────────────────────────────────────────────────────
 let calPlanCache=[], calProjectMap={};
@@ -949,13 +985,15 @@ async function renderCalendar(){
       <div class="cal-day-num">${d}</div>
       ${items.slice(0,2).map(it=>{
         const proj=it.project_id?calProjectMap[it.project_id]:null;
-        const dot=proj?`<span class="cal-event-dot" style="background:${proj.color}"></span>`:'';
-        return `<div class="cal-event ${it.done?'cal-event-done':''}" ${proj?`style="border-left:3px solid ${proj.color}"`:''}>${dot}${it.title}</div>`;
+        const style=proj?`background:${proj.color}33;color:${proj.color};border-left:3px solid ${proj.color}`:'';
+        return `<div class="cal-event ${it.done?'cal-event-done':''}" style="${style}">${it.title}</div>`;
       }).join('')}
       ${items.length>2?`<div class="cal-event-more">+${items.length-2}</div>`:''}
     </div>`;
   }
   $('cal-grid').innerHTML=html;
+  // Projekt-Legende anzeigen
+  renderCalLegend();
   const upcoming=allPlan.filter(p=>p.date>=today&&!p.done).slice(0,5);
   $('cal-upcoming-list').innerHTML=!upcoming.length?'<p class="empty-hint-small">Keine kommenden Termine</p>':
     upcoming.map(p=>{
