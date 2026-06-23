@@ -341,42 +341,48 @@ async function runCreateSets(){
   closeModal();
   const selectedFiles=projectFiles.filter(f=>checked.includes(f.id));
   showToast(`Erstelle ${selectedFiles.length} Lernset${selectedFiles.length>1?'s':''}...`);
-  let created=0;
+  let created=0, lastError='';
   for(const file of selectedFiles){
     try{
-      $('projects-loading') && ($('projects-loading').style.display='none');
       const modes=mode==='all'?['flashcards','summary','quiz']:[mode];
       let flashcards=[],summary='',quiz=[];
       const contentForPrompt=file.content.slice(0,6000);
       for(const m of modes){
         const prompt=buildPromptFromContent(m,contentForPrompt,file.name);
         const result=await callBackend(prompt);
-        if(m==='flashcards')flashcards=parseFlashcards(result);
-        if(m==='summary')summary=result;
-        if(m==='quiz')quiz=parseQuiz(result);
+        if(m==='flashcards'){flashcards=parseFlashcards(result);}
+        if(m==='summary'){summary=result;}
+        if(m==='quiz'){quiz=parseQuiz(result);}
+      }
+      // Mindestens etwas muss erstellt worden sein
+      if(!flashcards.length&&!summary&&!quiz.length){
+        lastError='KI lieferte keine verwertbaren Daten';
+        showToast(`${file.name}: KI-Antwort leer, übersprungen`,'error');
+        continue;
       }
       await dbInsert('learning_sets',{user_id:currentUser.id,project_id:currentProject.id,title:file.name.replace(/\.[^.]+$/,''),subject:'',flashcards,summary,quiz});
       created++;
       showToast(`${created}/${selectedFiles.length} Lernsets erstellt...`);
-    }catch(e){showToast(`Fehler bei ${file.name}`,'error');}
+    }catch(e){lastError=e.message;showToast(`Fehler bei ${file.name}: ${e.message}`,'error');}
   }
   await loadProjectSets();
-  showToast(`${created} Lernset${created!==1?'s':''} erstellt ✓`);
-  switchProjTab('sets');
+  if(created>0){showToast(`${created} Lernset${created!==1?'s':''} erstellt ✓`);switchProjTab('sets');}
+  else{showToast(`Konnte keine Lernsets erstellen: ${lastError||'unbekannter Fehler'}`,'error');}
 }
 
 function buildPromptFromContent(mode,content,filename){
   const ctx=`\n\nDokument "${filename}":\n${content}`;
-  if(mode==='flashcards')return`Erstelle 15 Karteikarten aus diesem Dokument. NUR JSON:\n[{"front":"Frage","back":"Antwort"}]${ctx}`;
+  if(mode==='flashcards')return`Erstelle 15 Karteikarten aus diesem Dokument auf Deutsch.
+WICHTIG: Antworte AUSSCHLIESSLICH mit einem gültigen JSON-Array, ohne Markdown, ohne Erklärung, ohne Codeblock. Genau dieses Format:
+[{"front":"Frage","back":"Antwort"}]${ctx}`;
   if(mode==='summary')return`Strukturierte Zusammenfassung auf Deutsch mit Markdown, 300-500 Wörter.${ctx}`;
   if(mode==='quiz')return`Erstelle 10 abwechslungsreiche Quizfragen auf Deutsch zu diesem Stoff.
-Wichtig für Vielfalt:
-- Mische die Fragetypen gut: ca. 5x multiple_choice, 3x true_false, 2x freetext
-- Variiere die Schwierigkeit (einfache Wissensfragen UND anspruchsvollere Verständnis-/Anwendungsfragen)
-- Decke verschiedene Aspekte/Kapitel des Stoffs ab, nicht nur einen Teil
-- Frage nach Definitionen, Zusammenhängen, Beispielen, Vor-/Nachteilen und Anwendungen
-- Bei multiple_choice: plausible falsche Antworten, nicht offensichtlich
-NUR JSON:\n[{"type":"multiple_choice","question":"...","options":["A","B","C","D"],"correct":0},{"type":"true_false","question":"...","correct":true},{"type":"freetext","question":"...","answer":"..."}]${ctx}`;
+Mische die Fragetypen: ca. 5x multiple_choice, 3x true_false, 2x freetext.
+Variiere die Schwierigkeit und decke verschiedene Aspekte des Stoffs ab.
+Bei multiple_choice: plausible, nicht offensichtliche falsche Antworten.
+
+WICHTIG: Antworte AUSSCHLIESSLICH mit einem gültigen JSON-Array, ohne Markdown, ohne Erklärung, ohne Codeblock. Genau dieses Format:
+[{"type":"multiple_choice","question":"...","options":["A","B","C","D"],"correct":0},{"type":"true_false","question":"...","correct":true},{"type":"freetext","question":"...","answer":"..."}]${ctx}`;
 }
 
 // ── KI Lernplan aus Dateien ───────────────────────────────────────────────────
@@ -553,8 +559,28 @@ async function callBackend(prompt){
   return(await res.json()).result;
 }
 
-function parseFlashcards(t){try{const m=t.match(/\[[\s\S]*\]/);return m?JSON.parse(m[0]):[];}catch{return[];}}
-function parseQuiz(t){try{const m=t.match(/\[[\s\S]*\]/);return m?JSON.parse(m[0]):[];}catch{return[];}}
+function cleanJsonText(t){
+  // Markdown-Codeblöcke entfernen
+  return t.replace(/```json/gi,'').replace(/```/g,'').trim();
+}
+function parseFlashcards(t){
+  try{
+    const c=cleanJsonText(t);
+    const m=c.match(/\[[\s\S]*\]/);
+    if(!m)return [];
+    const arr=JSON.parse(m[0]);
+    return Array.isArray(arr)?arr.filter(x=>x&&x.front&&x.back):[];
+  }catch(e){console.error('Flashcard-Parse-Fehler:',e,t.slice(0,200));return [];}
+}
+function parseQuiz(t){
+  try{
+    const c=cleanJsonText(t);
+    const m=c.match(/\[[\s\S]*\]/);
+    if(!m)return [];
+    const arr=JSON.parse(m[0]);
+    return Array.isArray(arr)?arr.filter(x=>x&&x.type&&x.question):[];
+  }catch(e){console.error('Quiz-Parse-Fehler:',e,t.slice(0,200));return [];}
+}
 
 // ── Save Set ──────────────────────────────────────────────────────────────────
 async function saveSet(){
